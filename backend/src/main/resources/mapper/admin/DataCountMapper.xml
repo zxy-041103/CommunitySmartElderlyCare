@@ -28,21 +28,23 @@
     <select id="selectTotalServiceOrderCount" resultType="java.lang.Long">
         SELECT COUNT(*) FROM service_order 
         WHERE is_deleted = 0 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 查询已核销的服务订单数 -->
     <select id="selectVerifiedServiceOrderCount" resultType="java.lang.Long">
-        SELECT COUNT(*) FROM service_verification 
-        WHERE verification_status = 'verified' 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        SELECT COUNT(*) FROM service_verification sv
+        INNER JOIN service_order so ON sv.order_id = so.id
+        WHERE sv.verification_status = 'verified' 
+        AND so.is_deleted = 0
+        AND so.create_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 查询紧急求助总数 -->
     <select id="selectTotalEmergencyCount" resultType="java.lang.Long">
         SELECT COUNT(*) FROM emergency_help 
         WHERE is_deleted = 0 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 查询已响应的紧急求助数 -->
@@ -50,14 +52,14 @@
         SELECT COUNT(*) FROM emergency_help 
         WHERE help_status IN ('handling', 'completed') 
         AND is_deleted = 0 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 查询服务评价平均分 -->
     <select id="selectAverageSatisfaction" resultType="java.math.BigDecimal">
         SELECT AVG(rating) FROM service_evaluation 
         WHERE is_deleted = 0 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 查询指定时间范围内的健康异常数据数 -->
@@ -107,7 +109,7 @@
         LEFT JOIN sys_user u ON so.caregiver_id = u.id 
         WHERE so.caregiver_id IS NOT NULL 
         AND so.is_deleted = 0 
-        AND so.created_at BETWEEN #{startTime} AND #{endTime}
+        AND so.create_time BETWEEN #{startTime} AND #{endTime}
         GROUP BY so.caregiver_id, u.real_name 
         ORDER BY count DESC
     </select>
@@ -117,7 +119,7 @@
         SELECT service_type as name, COUNT(*) as value 
         FROM service_order 
         WHERE is_deleted = 0 
-        AND created_at BETWEEN #{startTime} AND #{endTime}
+        AND create_time BETWEEN #{startTime} AND #{endTime}
         GROUP BY service_type 
         ORDER BY value DESC
     </select>
