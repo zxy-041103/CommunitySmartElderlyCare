@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.community.elderly.mapper.elderly.ElderlyHealthMapper">
+
+    <resultMap id="HealthDataResultMap" type="com.community.elderly.entity.HealthData">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="heart_rate" property="heartRate"/>
+        <result column="systolic_pressure" property="systolicPressure"/>
+        <result column="diastolic_pressure" property="diastolicPressure"/>
+        <result column="blood_sugar" property="bloodSugar"/>
+        <result column="temperature" property="temperature"/>
+        <result column="health_status" property="healthStatus"/>
+        <result column="description" property="description"/>
+        <result column="monitor_time" property="monitorTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="HealthWarningResultMap" type="com.community.elderly.entity.HealthWarning">
+        <id column="id" property="id"/>
+        <result column="health_data_id" property="healthDataId"/>
+        <result column="user_id" property="userId"/>
+        <result column="warning_type" property="warningType"/>
+        <result column="warning_level" property="warningLevel"/>
+        <result column="warning_desc" property="warningDesc"/>
+        <result column="is_processed" property="isProcessed"/>
+        <result column="processor_id" property="processorId"/>
+        <result column="process_result" property="processResult"/>
+        <result column="process_time" property="processTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <resultMap id="HealthWarningThresholdResultMap" type="com.community.elderly.entity.HealthWarningThreshold">
+        <id column="id" property="id"/>
+        <result column="indicator_type" property="indicatorType"/>
+        <result column="min_value" property="minValue"/>
+        <result column="max_value" property="maxValue"/>
+        <result column="is_active" property="isActive"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 健康数据相关 -->
+    <insert id="insertHealthData" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO health_data (user_id, heart_rate, systolic_pressure, diastolic_pressure, 
+                                 blood_sugar, temperature, health_status, description, monitor_time, 
+                                 create_time, update_time)
+        VALUES (#{userId}, #{heartRate}, #{systolicPressure}, #{diastolicPressure}, 
+                #{bloodSugar}, #{temperature}, #{healthStatus}, #{description}, #{monitorTime}, 
+                #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="selectHealthDataById" resultMap="HealthDataResultMap">
+        SELECT * FROM health_data WHERE id = #{id}
+    </select>
+
+    <select id="selectHealthDataByUserId" resultMap="HealthDataResultMap">
+        SELECT * FROM health_data 
+        WHERE user_id = #{userId} 
+        AND (#{startTime} IS NULL OR monitor_time &gt;= #{startTime})
+        AND (#{endTime} IS NULL OR monitor_time &lt;= #{endTime})
+        ORDER BY monitor_time DESC
+        LIMIT #{pageNum}, #{pageSize}
+    </select>
+
+    <update id="updateHealthData">
+        UPDATE health_data
+        SET heart_rate = #{heartRate},
+            systolic_pressure = #{systolicPressure},
+            diastolic_pressure = #{diastolicPressure},
+            blood_sugar = #{bloodSugar},
+            temperature = #{temperature},
+            health_status = #{healthStatus},
+            description = #{description},
+            monitor_time = #{monitorTime},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteHealthDataById">
+        DELETE FROM health_data WHERE id = #{id}
+    </delete>
+
+    <select id="countHealthDataByUserId" resultType="int">
+        SELECT COUNT(*) FROM health_data 
+        WHERE user_id = #{userId}
+        AND (#{startTime} IS NULL OR monitor_time &gt;= #{startTime})
+        AND (#{endTime} IS NULL OR monitor_time &lt;= #{endTime})
+    </select>
+
+    <!-- 健康预警相关 -->
+    <insert id="insertHealthWarning" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO health_warning (health_data_id, user_id, warning_type, warning_level, 
+                                    warning_desc, is_processed, create_time, update_time)
+        VALUES (#{healthDataId}, #{userId}, #{warningType}, #{warningLevel}, 
+                #{warningDesc}, #{isProcessed}, #{createTime}, #{updateTime})
+    </insert>
+
+    <select id="selectHealthWarningsByUserId" resultMap="HealthWarningResultMap">
+        SELECT * FROM health_warning WHERE user_id = #{userId} ORDER BY create_time DESC
+    </select>
+
+    <!-- 统计相关 -->
+    <select id="selectTotalCount" resultType="long">
+        SELECT COUNT(*) FROM health_data WHERE user_id IS NOT NULL
+    </select>
+
+    <select id="selectAbnormalCount" resultType="long">
+        SELECT COUNT(*) FROM health_data h JOIN health_warning w ON h.id = w.health_data_id
+    </select>
+
+    <select id="selectMonthlyAbnormalCount" resultType="long">
+        SELECT COUNT(*) FROM health_data WHERE health_status = 'abnormal'
+        AND monitor_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+    </select>
+
+    <!-- 健康预警阈值相关 -->
+    <insert id="insertHealthWarningThreshold" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO health_warning_threshold (indicator_type, min_value, max_value, is_active, create_time, update_time)
+        VALUES (#{indicatorType}, #{minValue}, #{maxValue}, #{isActive}, #{createTime}, #{updateTime})
+    </insert>
+
+    <update id="updateHealthWarningThreshold">
+        UPDATE health_warning_threshold
+        SET indicator_type = #{indicatorType},
+            min_value = #{minValue},
+            max_value = #{maxValue},
+            is_active = #{isActive},
+            update_time = #{updateTime}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectActiveHealthWarningThresholds" resultMap="HealthWarningThresholdResultMap">
+        SELECT * FROM health_warning_threshold WHERE is_active = 1 ORDER BY indicator_type
+    </select>
+
+    <select id="selectHealthWarningThresholdByType" resultMap="HealthWarningThresholdResultMap">
+        SELECT * FROM health_warning_threshold WHERE indicator_type = #{indicatorType} AND is_active = 1
+    </select>
+
+</mapper>

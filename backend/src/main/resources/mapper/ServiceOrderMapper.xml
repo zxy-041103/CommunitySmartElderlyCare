@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.community.elderly.mapper.ServiceOrderMapper">
+
+    <resultMap id="BaseResultMap" type="com.community.elderly.entity.ServiceOrder">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="user_id" property="userId"/>
+        <result column="service_type" property="serviceType"/>
+        <result column="service_name" property="serviceName"/>
+        <result column="service_date" property="serviceDate"/>
+        <result column="service_time" property="serviceTime"/>
+        <result column="caregiver_id" property="caregiverId"/>
+        <result column="service_address" property="serviceAddress"/>
+        <result column="service_description" property="serviceDescription"/>
+        <result column="order_status" property="orderStatus"/>
+        <result column="is_paid" property="isPaid"/>
+        <result column="payment_time" property="paymentTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="is_deleted" property="isDeleted"/>
+    </resultMap>
+
+    <select id="selectPageByUserId" resultMap="BaseResultMap">
+        SELECT * FROM service_order
+        WHERE user_id = #{userId} AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectPageByCaregiverId" resultMap="BaseResultMap">
+        SELECT * FROM service_order
+        WHERE caregiver_id = #{caregiverId} AND is_deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

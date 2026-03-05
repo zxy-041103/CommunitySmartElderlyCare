@@ -1,0 +1,7 @@
+com\community\elderly\controller\elderly\UserControllerTest.class
+com\community\elderly\utils\AesUtilEncryptTest.class
+com\community\elderly\DatabaseConnectionTest.class
+com\community\elderly\service\elderly\impl\UserServiceImplTest.class
+com\community\elderly\utils\AesUtilTest.class
+com\community\elderly\utils\AesUtilBatchGenerateTest.class
+com\community\elderly\utils\AesUtilGenerateTest.class

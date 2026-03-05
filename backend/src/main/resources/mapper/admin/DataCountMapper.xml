@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.community.elderly.mapper.admin.DataCountMapper">
+    
+    <!-- 查询老人总数 -->
+    <select id="selectElderlyCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_user WHERE role_type = 'elderly' AND is_deleted = 0
+    </select>
+    
+    <!-- 查询家属总数（role_type为family的用户） -->
+    <select id="selectFamilyCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_user WHERE role_type = 'family' AND is_deleted = 0
+    </select>
+    
+    <!-- 查询护工总数（role_type为caregiver的用户） -->
+    <select id="selectCaregiverCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM sys_user WHERE role_type = 'caregiver' AND is_deleted = 0
+    </select>
+    
+    <!-- 查询有健康数据的老人数 -->
+    <select id="selectElderlyWithHealthDataCount" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT user_id) FROM health_data 
+        WHERE is_deleted = 0 
+        AND monitor_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询服务订单总数 -->
+    <select id="selectTotalServiceOrderCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM service_order 
+        WHERE is_deleted = 0 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询已核销的服务订单数 -->
+    <select id="selectVerifiedServiceOrderCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM service_verification 
+        WHERE verification_status = 'verified' 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询紧急求助总数 -->
+    <select id="selectTotalEmergencyCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM emergency_help 
+        WHERE is_deleted = 0 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询已响应的紧急求助数 -->
+    <select id="selectRespondedEmergencyCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM emergency_help 
+        WHERE help_status IN ('handling', 'completed') 
+        AND is_deleted = 0 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询服务评价平均分 -->
+    <select id="selectAverageSatisfaction" resultType="java.math.BigDecimal">
+        SELECT AVG(rating) FROM service_evaluation 
+        WHERE is_deleted = 0 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询指定时间范围内的健康异常数据数 -->
+    <select id="selectAbnormalHealthDataCount" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE health_status = 'abnormal' 
+        AND is_deleted = 0 
+        AND monitor_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+    
+    <!-- 查询指定日期的健康数据总数 -->
+    <select id="selectHealthDataCountByDate" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE is_deleted = 0 
+        AND DATE(monitor_time) = #{date}
+    </select>
+    
+    <!-- 查询指定日期的异常健康数据数 -->
+    <select id="selectAbnormalHealthDataCountByDate" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE health_status = 'abnormal' 
+        AND is_deleted = 0 
+        AND DATE(monitor_time) = #{date}
+    </select>
+    
+    <!-- 查询指定月份的健康数据总数 -->
+    <select id="selectHealthDataCountByMonth" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE is_deleted = 0 
+        AND YEAR(monitor_time) = #{year} 
+        AND MONTH(monitor_time) = #{month}
+    </select>
+    
+    <!-- 查询指定月份的异常健康数据数 -->
+    <select id="selectAbnormalHealthDataCountByMonth" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE health_status = 'abnormal' 
+        AND is_deleted = 0 
+        AND YEAR(monitor_time) = #{year} 
+        AND MONTH(monitor_time) = #{month}
+    </select>
+    
+    <!-- 查询护工工作量分布 -->
+    <select id="selectCaregiverWorkload" resultType="java.util.HashMap">
+        SELECT u.real_name as name, COUNT(so.id) as count 
+        FROM service_order so 
+        LEFT JOIN sys_user u ON so.caregiver_id = u.id 
+        WHERE so.caregiver_id IS NOT NULL 
+        AND so.is_deleted = 0 
+        AND so.created_at BETWEEN #{startTime} AND #{endTime}
+        GROUP BY so.caregiver_id, u.real_name 
+        ORDER BY count DESC
+    </select>
+    
+    <!-- 查询服务类型占比 -->
+    <select id="selectServiceTypeRatio" resultType="java.util.HashMap">
+        SELECT service_type as name, COUNT(*) as value 
+        FROM service_order 
+        WHERE is_deleted = 0 
+        AND created_at BETWEEN #{startTime} AND #{endTime}
+        GROUP BY service_type 
+        ORDER BY value DESC
+    </select>
+    
+    <!-- 查询老人健康状态分布 -->
+    <select id="selectHealthStatusDistribution" resultType="java.util.HashMap">
+        SELECT health_status as name, COUNT(*) as value 
+        FROM health_data 
+        WHERE is_deleted = 0 
+        AND monitor_time BETWEEN #{startTime} AND #{endTime}
+        GROUP BY health_status 
+        ORDER BY value DESC
+    </select>
+    
+</mapper>
