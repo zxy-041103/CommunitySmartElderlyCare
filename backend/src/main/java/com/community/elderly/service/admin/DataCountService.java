@@ -38,6 +38,13 @@ public class DataCountService {
         // 计算时间范围
         TimeRange range = calculateTimeRange(timeRange);
         
+        // 调试日志：打印时间范围
+        log.info("=== 调试信息 ===");
+        log.info("时间范围参数: {}", timeRange);
+        log.info("开始时间: {}", range.getStartTime());
+        log.info("结束时间: {}", range.getEndTime());
+        log.info("================");
+        
         // 1. 计算健康监测覆盖率
         String healthCoverage = calculateHealthCoverageRate(range);
         dto.setHealthCoverage(healthCoverage);
@@ -76,6 +83,9 @@ public class DataCountService {
             trendValues.add(item.getRate());
         }
         dto.setHealthTrend(new DataCountStatisticsDTO.HealthTrend(trendLabels, trendValues));
+        
+        // 调试日志：打印健康趋势数据
+        log.info("健康趋势数据: labels={}, values={}", trendLabels, trendValues);
         
         // 7. 获取护工工作量分布
         List<DataCountStatisticsDTO.CaregiverWorkloadItem> workloadItems = getCaregiverWorkload(range);
@@ -134,31 +144,36 @@ public class DataCountService {
     
     /**
      * 计算时间范围
-     * 注意：数据库中的数据日期是2026年的，所以这里使用2026年作为基准年份
+     * 使用当前日期作为基准，计算实时时间范围
      */
     private TimeRange calculateTimeRange(String timeRange) {
-        // 使用2026年作为基准年份（与数据库数据一致）
-        LocalDateTime baseTime = LocalDateTime.of(2026, 1, 1, 0, 0, 0);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startTime;
         LocalDateTime endTime;
         
         switch (timeRange) {
             case "week":
-                // 本周：从周一开始到周日（使用2026年1月20日那一周的数据）
-                startTime = LocalDateTime.of(2026, 1, 20, 0, 0, 0);
-                endTime = LocalDateTime.of(2026, 1, 26, 23, 59, 59);
+                // 本周：从周一开始到周日
+                LocalDate weekStart = now.toLocalDate().with(DayOfWeek.MONDAY);
+                LocalDate weekEnd = weekStart.plusDays(6);
+                startTime = weekStart.atStartOfDay();
+                endTime = weekEnd.atTime(23, 59, 59);
                 break;
             case "year":
-                // 本年：2026年全年
-                startTime = LocalDateTime.of(2026, 1, 1, 0, 0, 0);
-                endTime = LocalDateTime.of(2026, 12, 31, 23, 59, 59);
+                // 本年：从1月1日到12月31日
+                int currentYear = now.getYear();
+                startTime = LocalDateTime.of(currentYear, 1, 1, 0, 0, 0);
+                endTime = LocalDateTime.of(currentYear, 12, 31, 23, 59, 59);
                 break;
             case "month":
             default:
-                // 本月：2026年1月（数据最多的月份）
-                startTime = LocalDateTime.of(2026, 1, 1, 0, 0, 0);
-                endTime = LocalDateTime.of(2026, 1, 31, 23, 59, 59);
+                // 本月：从1日到月末
+                int year = now.getYear();
+                int month = now.getMonthValue();
+                LocalDate monthStart = LocalDate.of(year, month, 1);
+                LocalDate monthEnd = monthStart.with(TemporalAdjusters.lastDayOfMonth());
+                startTime = monthStart.atStartOfDay();
+                endTime = monthEnd.atTime(23, 59, 59);
                 break;
         }
         
@@ -287,9 +302,13 @@ public class DataCountService {
                 LocalDate startDate = range.getStartTime().toLocalDate();
                 LocalDate endDate = range.getEndTime().toLocalDate();
                 
+                log.info("本周统计: 开始日期={}, 结束日期={}", startDate, endDate);
+                
                 for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                     Long totalCount = dataCountMapper.selectHealthDataCountByDate(date);
                     Long abnormalCount = dataCountMapper.selectAbnormalHealthDataCountByDate(date);
+                    
+                    log.info("日期={}: 总数={}, 异常数={}", date, totalCount, abnormalCount);
                     
                     BigDecimal rate = calculateRate(totalCount, abnormalCount);
                     trendList.add(new DataCountStatisticsDTO.HealthAbnormalTrendItem(

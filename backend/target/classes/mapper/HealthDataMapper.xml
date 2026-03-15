@@ -5,11 +5,13 @@
     <resultMap id="HealthDataResultMap" type="com.community.elderly.entity.HealthData">
         <id column="id" property="id"/>
         <result column="user_id" property="userId"/>
+        <result column="elderlyName" property="elderlyName"/>
         <result column="heart_rate" property="heartRate"/>
         <result column="systolic_pressure" property="systolicPressure"/>
         <result column="diastolic_pressure" property="diastolicPressure"/>
         <result column="blood_sugar" property="bloodSugar"/>
         <result column="temperature" property="temperature"/>
+        <result column="weight" property="weight"/>
         <result column="health_status" property="healthStatus"/>
         <result column="description" property="description"/>
         <result column="monitor_time" property="monitorTime"/>
@@ -45,10 +47,10 @@
     <!-- 健康数据相关 -->
     <insert id="insertHealthData" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO health_data (user_id, heart_rate, systolic_pressure, diastolic_pressure, 
-                                 blood_sugar, temperature, health_status, description, monitor_time, 
+                                 blood_sugar, temperature, weight, health_status, description, monitor_time, 
                                  create_time, update_time)
         VALUES (#{userId}, #{heartRate}, #{systolicPressure}, #{diastolicPressure}, 
-                #{bloodSugar}, #{temperature}, #{healthStatus}, #{description}, #{monitorTime}, 
+                #{bloodSugar}, #{temperature}, #{weight}, #{healthStatus}, #{description}, #{monitorTime}, 
                 #{createTime}, #{updateTime})
     </insert>
 
@@ -72,6 +74,7 @@
             diastolic_pressure = #{diastolicPressure},
             blood_sugar = #{bloodSugar},
             temperature = #{temperature},
+            weight = #{weight},
             health_status = #{healthStatus},
             description = #{description},
             monitor_time = #{monitorTime},
@@ -108,12 +111,17 @@
     </select>
 
     <select id="selectAbnormalCount" resultType="long">
-        SELECT COUNT(*) FROM health_data h JOIN health_warning w ON h.id = w.health_data_id
+        SELECT COUNT(*) FROM health_data WHERE health_status = 'abnormal'
     </select>
 
     <select id="selectMonthlyAbnormalCount" resultType="long">
         SELECT COUNT(*) FROM health_data WHERE health_status = 'abnormal'
         AND monitor_time >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+    </select>
+
+    <select id="selectTodayCount" resultType="long">
+        SELECT COUNT(*) FROM health_data 
+        WHERE DATE(monitor_time) = CURDATE()
     </select>
 
     <!-- 健康预警阈值相关 -->
@@ -138,6 +146,31 @@
 
     <select id="selectHealthWarningThresholdByType" resultMap="HealthWarningThresholdResultMap">
         SELECT * FROM health_warning_threshold WHERE indicator_type = #{indicatorType} AND is_active = 1
+    </select>
+
+    <!-- 分页查询相关 -->
+    <select id="selectHealthDataList" resultMap="HealthDataResultMap">
+        SELECT h.id, h.user_id, h.heart_rate, h.systolic_pressure, h.diastolic_pressure, 
+               h.blood_sugar, h.temperature, h.weight, h.health_status, h.description, 
+               h.monitor_time, h.create_time, h.update_time, u.real_name as elderlyName 
+        FROM health_data h 
+        LEFT JOIN sys_user u ON h.user_id = u.id 
+        WHERE (#{name} IS NULL OR u.real_name LIKE CONCAT('%', #{name}, '%')) 
+        AND (#{status} IS NULL OR h.health_status = #{status})
+        AND (#{startDate} IS NULL OR DATE(h.monitor_time) &gt;= #{startDate})
+        AND (#{endDate} IS NULL OR DATE(h.monitor_time) &lt;= #{endDate})
+        ORDER BY h.monitor_time DESC 
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="selectHealthDataCount" resultType="long">
+        SELECT COUNT(*) 
+        FROM health_data h 
+        LEFT JOIN sys_user u ON h.user_id = u.id 
+        WHERE (#{name} IS NULL OR u.real_name LIKE CONCAT('%', #{name}, '%')) 
+        AND (#{status} IS NULL OR h.health_status = #{status})
+        AND (#{startDate} IS NULL OR DATE(h.monitor_time) &gt;= #{startDate})
+        AND (#{endDate} IS NULL OR DATE(h.monitor_time) &lt;= #{endDate})
     </select>
 
 </mapper>

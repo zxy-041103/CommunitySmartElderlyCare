@@ -49,11 +49,11 @@ public interface ElderlyHealthService {
      * 获取健康数据统计
      */
     Map<String, Object> getStatistics();
-
+    
     /**
      * 获取健康数据列表
      */
-    Map<String, Object> getHealthDataList(Integer page, Integer size, String name, String status);
+    Map<String, Object> getHealthDataList(Integer page, Integer size, String name, String status, String startDate, String endDate);
 
     /**
      * 获取健康数据趋势（指定用户）
@@ -64,4 +64,19 @@ public interface ElderlyHealthService {
      * 获取所有用户的健康数据趋势
      */
     Map<String, Object> getAllHealthTrend(Integer days, String startDate, String endDate);
+    
+    /**
+     * 老人查询自己的健康数据
+     */
+    Map<String, Object> queryHealthData(Long elderlyId, Integer pageNum, Integer pageSize, String healthStatus, String startTime, String endTime);
+    
+    /**
+     * 老人输入自己的健康数据
+     */
+    HealthData inputHealthData(Long elderlyId, HealthDataInputRequest request);
+    
+    /**
+     * 老人删除自己的健康数据
+     */
+    void deleteHealthData(Long elderlyId, Long id);
 }

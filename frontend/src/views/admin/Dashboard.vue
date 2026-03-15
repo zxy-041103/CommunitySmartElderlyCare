@@ -457,7 +457,7 @@ const fetchStatistics = async () => {
       // 健康监测数量用健康数据覆盖率计算（老人数 * 覆盖率 / 100）
       const coverage = res.data.healthCoverage || 0;
       healthMonitorCount.value = Math.round(elderlyCount.value * coverage / 100);
-      emergencyCount.value = res.data.monthlyEmergencies || 0;
+      emergencyCount.value = res.data.emergencyCount || 0;
       activityCount.value = res.data.totalActivities || 0;
       abnormalCount.value = res.data.monthlyAbnormalities || 0;
       serviceCount.value = res.data.monthlyServices || 0;

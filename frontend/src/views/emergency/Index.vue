@@ -231,7 +231,7 @@
             <el-option
               v-for="item in elderlyList"
               :key="item.id"
-              :label="item.name"
+              :label="item.realName || item.name"
               :value="item.id"
             />
           </el-select>
@@ -518,7 +518,20 @@ const fetchList = async () => {
       ...searchForm,
     };
     const res = await getEmergencyList(params);
-    tableData.value = res.data.records || [];
+    // 处理数据，映射字段名
+    tableData.value = (res.data.records || []).map(item => {
+      return {
+        ...item,
+        // 后端返回的字段名映射到前端显示的字段名
+        elderlyName: item.elderlyName || '-',
+        type: item.helpType || item.type || '-',
+        status: item.helpStatus || item.status || '-',
+        emergencyTime: item.createTime || item.emergencyTime || '-',
+        handleTime: item.handleTime || '-',
+        handlerName: item.handlerName || '-',
+        handleResult: item.handleResult || '-'
+      };
+    });
     pagination.total = res.data.total || 0;
   } catch (error) {
     ElMessage.error("获取求助记录列表失败");
@@ -789,10 +802,11 @@ const handleDialogClose = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  // 先获取老人列表，再获取求助记录
+  await fetchElderlyList();
   fetchList();
   fetchStatistics();
-  fetchElderlyList();
   initTrendChart();
   initPieChart();
 });

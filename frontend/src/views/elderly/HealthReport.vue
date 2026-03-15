@@ -207,6 +207,7 @@ import * as echarts from "echarts";
 import { Warning, Refresh } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import HealthCard from "@/components/elderly/HealthCard.vue";
+import { getElderlyHealthTrend, getHealthOverview } from "@/api/elderly/home";
 
 const selectedPeriod = ref("7");
 const timePeriods = [
@@ -216,6 +217,7 @@ const timePeriods = [
 
 const healthChartRef = ref(null);
 let healthChart = null;
+const loading = ref(false);
 
 // 弹窗相关
 const detailDialogVisible = ref(false);
@@ -239,66 +241,62 @@ const recordRules = {
 
 const healthData = {
   7: {
-    dates: [
-      "1月18日",
-      "1月19日",
-      "1月20日",
-      "1月21日",
-      "1月22日",
-      "1月23日",
-      "1月24日",
-    ],
-    bloodPressure: [120, 135, 128, 140, 125, 130, 122],
-    bloodSugar: [5.5, 6.2, 5.8, 6.5, 5.9, 6.1, 5.7],
-    heartRate: [72, 78, 75, 82, 76, 74, 73],
+    dates: [],
+    bloodPressure: [],
+    bloodSugar: [],
+    heartRate: [],
   },
   30: {
-    dates: [
-      "12月25日",
-      "12月30日",
-      "1月5日",
-      "1月10日",
-      "1月15日",
-      "1月20日",
-      "1月24日",
-    ],
-    bloodPressure: [125, 130, 128, 135, 132, 128, 122],
-    bloodSugar: [5.8, 6.0, 5.9, 6.2, 6.1, 5.9, 5.7],
-    heartRate: [75, 76, 74, 78, 77, 75, 73],
+    dates: [],
+    bloodPressure: [],
+    bloodSugar: [],
+    heartRate: [],
   },
 };
 
-const abnormalRecords = ref([
-  {
-    date: "2024-01-21",
-    time: "08:30",
-    indicator: "血压",
-    value: "140/90",
-    status: "偏高",
-    advice: "建议休息15分钟后重新测量",
-  },
-  {
-    date: "2024-01-20",
-    time: "14:00",
-    indicator: "血糖",
-    value: "6.5",
-    status: "偏高",
-    advice: "减少碳水化合物摄入",
-  },
-  {
-    date: "2024-01-19",
-    time: "10:00",
-    indicator: "心率",
-    value: "82",
-    status: "偏快",
-    advice: "建议适当休息",
-  },
-]);
+const latestHealthData = ref(null);
+const abnormalRecords = ref([]);
 
 const bloodPressureData = computed(() => {
+  // 优先使用最新健康数据
+  if (latestHealthData.value && latestHealthData.value.bloodPressure && latestHealthData.value.bloodPressure !== '-') {
+    const bloodPressureStr = latestHealthData.value.bloodPressure;
+    const systolic = parseInt(bloodPressureStr.split('/')[0]);
+    const isAbnormal = systolic > 140;
+    const monitorTime = latestHealthData.value.monitorTime;
+    
+    return {
+      title: "血压",
+      value: bloodPressureStr,
+      unit: "mmHg",
+      status: isAbnormal ? "abnormal" : "normal",
+      time: monitorTime !== '-' ? new Date(monitorTime).toLocaleString('zh-CN') : "暂无数据",
+      advice: isAbnormal
+        ? "血压偏高，请注意休息并按时服药"
+        : "血压正常，继续保持",
+    };
+  }
+  
+  // 否则使用趋势数据的最后一条
   const currentData = healthData[selectedPeriod.value];
-  const lastValue =
-    currentData.bloodPressure[currentData.bloodPressure.length - 1];
+  
+  console.log('计算血压数据:', currentData);
+  
+  // 如果没有数据，返回默认值
+  if (!currentData || !currentData.dates || currentData.dates.length === 0) {
+    return {
+      title: "血压",
+      value: "--",
+      unit: "mmHg",
+      status: "normal",
+      time: "暂无数据",
+      advice: "暂无健康数据，请定期测量",
+    };
+  }
+  
+  const lastValue = currentData.bloodPressure[currentData.bloodPressure.length - 1];
+  const lastDate = currentData.dates[currentData.dates.length - 1];
+  
   const isAbnormal = lastValue > 140;
 
   return {
@@ -306,7 +304,7 @@ const bloodPressureData = computed(() => {
     value: lastValue.toString(),
     unit: "mmHg",
     status: isAbnormal ? "abnormal" : "normal",
-    time: "2024-01-24 08:30",
+    time: lastDate ? `${lastDate} 08:30` : "暂无数据",
     advice: isAbnormal
       ? "血压偏高，请注意休息并按时服药"
       : "血压正常，继续保持",
@@ -314,8 +312,40 @@ const bloodPressureData = computed(() => {
 });
 
 const bloodSugarData = computed(() => {
+  // 优先使用最新健康数据
+  if (latestHealthData.value && latestHealthData.value.bloodSugar && latestHealthData.value.bloodSugar !== '-') {
+    const bloodSugar = latestHealthData.value.bloodSugar;
+    const isAbnormal = bloodSugar > 6.1;
+    const monitorTime = latestHealthData.value.monitorTime;
+    
+    return {
+      title: "血糖",
+      value: bloodSugar.toFixed(1),
+      unit: "mmol/L",
+      status: isAbnormal ? "abnormal" : "normal",
+      time: monitorTime !== '-' ? new Date(monitorTime).toLocaleString('zh-CN') : "暂无数据",
+      advice: isAbnormal ? "血糖偏高，请控制饮食" : "血糖正常，继续保持",
+    };
+  }
+  
+  // 否则使用趋势数据的最后一条
   const currentData = healthData[selectedPeriod.value];
+  
+  // 如果没有数据，返回默认值
+  if (!currentData || !currentData.dates || currentData.dates.length === 0) {
+    return {
+      title: "血糖",
+      value: "--",
+      unit: "mmol/L",
+      status: "normal",
+      time: "暂无数据",
+      advice: "暂无健康数据，请定期测量",
+    };
+  }
+  
   const lastValue = currentData.bloodSugar[currentData.bloodSugar.length - 1];
+  const lastDate = currentData.dates[currentData.dates.length - 1];
+  
   const isAbnormal = lastValue > 6.1;
 
   return {
@@ -323,14 +353,46 @@ const bloodSugarData = computed(() => {
     value: lastValue.toFixed(1),
     unit: "mmol/L",
     status: isAbnormal ? "abnormal" : "normal",
-    time: "2024-01-24 08:30",
+    time: lastDate ? `${lastDate} 08:30` : "暂无数据",
     advice: isAbnormal ? "血糖偏高，请控制饮食" : "血糖正常，继续保持",
   };
 });
 
 const heartRateData = computed(() => {
+  // 优先使用最新健康数据
+  if (latestHealthData.value && latestHealthData.value.heartRate && latestHealthData.value.heartRate !== '-') {
+    const heartRate = latestHealthData.value.heartRate;
+    const isAbnormal = heartRate > 80;
+    const monitorTime = latestHealthData.value.monitorTime;
+    
+    return {
+      title: "心率",
+      value: heartRate.toString(),
+      unit: "次/分",
+      status: isAbnormal ? "abnormal" : "normal",
+      time: monitorTime !== '-' ? new Date(monitorTime).toLocaleString('zh-CN') : "暂无数据",
+      advice: isAbnormal ? "心率偏快，建议适当休息" : "心率正常，继续保持",
+    };
+  }
+  
+  // 否则使用趋势数据的最后一条
   const currentData = healthData[selectedPeriod.value];
+  
+  // 如果没有数据，返回默认值
+  if (!currentData || !currentData.dates || currentData.dates.length === 0) {
+    return {
+      title: "心率",
+      value: "--",
+      unit: "次/分",
+      status: "normal",
+      time: "暂无数据",
+      advice: "暂无健康数据，请定期测量",
+    };
+  }
+  
   const lastValue = currentData.heartRate[currentData.heartRate.length - 1];
+  const lastDate = currentData.dates[currentData.dates.length - 1];
+  
   const isAbnormal = lastValue > 80;
 
   return {
@@ -338,28 +400,123 @@ const heartRateData = computed(() => {
     value: lastValue.toString(),
     unit: "次/分",
     status: isAbnormal ? "abnormal" : "normal",
-    time: "2024-01-24 08:30",
+    time: lastDate ? `${lastDate} 08:30` : "暂无数据",
     advice: isAbnormal ? "心率偏快，建议适当休息" : "心率正常，继续保持",
   };
 });
 
-onMounted(() => {
+onMounted(async () => {
   initHealthChart();
   // 设置默认测量时间为当前时间
   const now = new Date();
   recordForm.value.measureTime = now.toISOString().slice(0, 19).replace('T', ' ');
+  // 加载健康数据
+  await loadLatestHealthData();
+  await loadHealthTrend();
 });
 
-watch(selectedPeriod, (newPeriod) => {
-  updateHealthChart(newPeriod);
+watch(selectedPeriod, async (newPeriod) => {
+  await loadHealthTrend();
 });
 
 const selectTimePeriod = (period) => {
   selectedPeriod.value = period;
 };
 
-const refreshData = () => {
+const loadLatestHealthData = async () => {
+  try {
+    const res = await getHealthOverview();
+    const data = res.data || {};
+    
+    console.log('加载最新健康数据:', data);
+    latestHealthData.value = data;
+  } catch (error) {
+    console.error("获取最新健康数据失败", error);
+  }
+};
+
+const loadHealthTrend = async () => {
+  loading.value = true;
+  try {
+    const res = await getElderlyHealthTrend(selectedPeriod.value);
+    const data = res.data || {};
+    
+    console.log('加载健康趋势数据:', data);
+    
+    healthData[selectedPeriod.value] = {
+      dates: data.dates || [],
+      bloodPressure: data.bloodPressure || [],
+      bloodSugar: data.bloodSugar || [],
+      heartRate: data.heartRate || []
+    };
+    
+    console.log('更新后的healthData:', healthData[selectedPeriod.value]);
+    
+    updateHealthChart(selectedPeriod.value);
+    updateAbnormalRecords();
+  } catch (error) {
+    console.error("获取健康趋势数据失败", error);
+    ElMessage.error("获取健康数据失败，请稍后重试");
+  } finally {
+    loading.value = false;
+  }
+};
+
+const refreshData = async () => {
+  await loadLatestHealthData();
+  await loadHealthTrend();
   ElMessage.success("数据已刷新");
+};
+
+const updateAbnormalRecords = () => {
+  const periodData = healthData[selectedPeriod.value];
+  const records = [];
+  
+  if (!periodData || !periodData.dates || periodData.dates.length === 0) {
+    abnormalRecords.value = [];
+    return;
+  }
+  
+  periodData.dates.forEach((date, index) => {
+    const bloodPressure = periodData.bloodPressure[index];
+    const bloodSugar = periodData.bloodSugar[index];
+    const heartRate = periodData.heartRate[index];
+    
+    if (bloodPressure > 140) {
+      records.push({
+        date,
+        time: "08:30",
+        indicator: "血压",
+        value: bloodPressure.toString(),
+        status: "偏高",
+        advice: "血压偏高，请注意休息并按时服药"
+      });
+    }
+    
+    if (bloodSugar > 6.1) {
+      records.push({
+        date,
+        time: "08:30",
+        indicator: "血糖",
+        value: bloodSugar.toFixed(1),
+        status: "偏高",
+        advice: "血糖偏高，请控制饮食"
+      });
+    }
+    
+    if (heartRate > 80) {
+      records.push({
+        date,
+        time: "08:30",
+        indicator: "心率",
+        value: heartRate.toString(),
+        status: "偏快",
+        advice: "心率偏快，建议适当休息"
+      });
+    }
+  });
+  
+  abnormalRecords.value = records;
 };
 
 const handleHealthAction = (data) => {

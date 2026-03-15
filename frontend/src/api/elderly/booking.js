@@ -2,7 +2,7 @@ import request from "../request";
 
 export function createServiceOrder(data) {
   return request({
-    url: "/service-order",
+    url: "/elderly/service-order",
     method: "post",
     data,
   });
@@ -10,7 +10,7 @@ export function createServiceOrder(data) {
 
 export function getServiceOrders(params) {
   return request({
-    url: "/service-order/list",
+    url: "/elderly/service-orders",
     method: "get",
     params,
   });

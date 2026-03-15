@@ -290,9 +290,9 @@ const loadHealthConfig = async () => {
     const res = await getCurrentWarningThresholds();
     if (res.code === 200 && res.data) {
       res.data.forEach((item) => {
-        if (item.indicatorType === "bloodPressureSystolic") {
+        if (item.indicatorType === "systolicPressure") {
           healthConfig.bloodPressureMax = item.maxValue;
-        } else if (item.indicatorType === "bloodPressureDiastolic") {
+        } else if (item.indicatorType === "diastolicPressure") {
           healthConfig.bloodPressureMin = item.minValue;
         } else if (item.indicatorType === "bloodSugar") {
           healthConfig.bloodSugarMax = item.maxValue;
@@ -315,24 +315,28 @@ const saveHealthConfig = async () => {
     await healthFormRef.value.validate();
     const requests = [
       {
-        indicatorType: "bloodPressureSystolic",
+        indicatorType: "systolicPressure",
         minValue: 0,
         maxValue: healthConfig.bloodPressureMax,
+        isActive: 1,
       },
       {
-        indicatorType: "bloodPressureDiastolic",
+        indicatorType: "diastolicPressure",
         minValue: healthConfig.bloodPressureMin,
         maxValue: 0,
+        isActive: 1,
       },
       {
         indicatorType: "bloodSugar",
         minValue: healthConfig.bloodSugarMin,
         maxValue: healthConfig.bloodSugarMax,
+        isActive: 1,
       },
       {
         indicatorType: "heartRate",
         minValue: healthConfig.heartRateMin,
         maxValue: healthConfig.heartRateMax,
+        isActive: 1,
       },
     ];
 

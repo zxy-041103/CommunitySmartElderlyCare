@@ -44,6 +44,24 @@ const routes = [
         component: () => import("@/views/elderly/ServiceBooking.vue"),
         meta: { title: "服务预约", roles: [1] },
       },
+      {
+        path: "elderly/health-monitor",
+        name: "ElderlyHealthMonitor",
+        component: () => import("@/views/elderly/HealthMonitor.vue"),
+        meta: { title: "健康监测", roles: [1] },
+      },
+      {
+        path: "elderly/emergency",
+        name: "ElderlyEmergency",
+        component: () => import("@/views/elderly/Emergency.vue"),
+        meta: { title: "紧急求助", roles: [1] },
+      },
+      {
+        path: "elderly/family-contact",
+        name: "ElderlyFamilyContact",
+        component: () => import("@/views/elderly/FamilyContact.vue"),
+        meta: { title: "联系家属", roles: [1] },
+      },
 
       // 家属角色路由 (role_type=2)
       {
@@ -111,18 +129,18 @@ const routes = [
         meta: { title: "系统配置", roles: [4] },
       },
 
-      // 公共路由（所有角色都可访问）
+      // 公共路由（管理员、家属、护工可访问）
       {
         path: "health",
         name: "Health",
         component: () => import("@/views/health/Index.vue"),
-        meta: { title: "健康监测", roles: [1, 2, 3, 4] },
+        meta: { title: "健康监测", roles: [2, 3, 4] },
       },
       {
         path: "emergency",
         name: "Emergency",
         component: () => import("@/views/emergency/Index.vue"),
-        meta: { title: "紧急求助", roles: [1, 2, 3, 4] },
+        meta: { title: "紧急求助", roles: [2, 3, 4] },
       },
     ],
   },

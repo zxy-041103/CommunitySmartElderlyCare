@@ -196,4 +196,61 @@ public class ServiceOrderController {
             return Result.error(e.getMessage());
         }
     }
+
+    /**
+     * 获取服务类型列表
+     *
+     * @return 服务类型列表
+     */
+    @GetMapping("/types")
+    @ApiOperation(value = "获取服务类型", notes = "获取所有可用的服务类型")
+    public Result<java.util.List<Map<String, Object>>> getServiceTypes() {
+        try {
+            java.util.List<Map<String, Object>> serviceTypes = new java.util.ArrayList<>();
+            
+            Map<String, Object> homeCare = new java.util.HashMap<>();
+            homeCare.put("id", 1);
+            homeCare.put("name", "居家护理");
+            homeCare.put("description", "提供日常生活照料、康复护理等服务");
+            homeCare.put("price", "50元/小时");
+            homeCare.put("icon", "House");
+            homeCare.put("color", "#67C23A");
+            homeCare.put("type", "home_care");
+            serviceTypes.add(homeCare);
+            
+            Map<String, Object> medicalCare = new java.util.HashMap<>();
+            medicalCare.put("id", 2);
+            medicalCare.put("name", "医疗护理");
+            medicalCare.put("description", "提供专业医疗护理、健康监测等服务");
+            medicalCare.put("price", "80元/小时");
+            medicalCare.put("icon", "User");
+            medicalCare.put("color", "#409EFF");
+            medicalCare.put("type", "medical_care");
+            serviceTypes.add(medicalCare);
+            
+            Map<String, Object> lifeAssistance = new java.util.HashMap<>();
+            lifeAssistance.put("id", 3);
+            lifeAssistance.put("name", "生活协助");
+            lifeAssistance.put("description", "提供购物、清洁、烹饪等生活协助服务");
+            lifeAssistance.put("price", "30元/小时");
+            lifeAssistance.put("icon", "BellFilled");
+            lifeAssistance.put("color", "#E6A23C");
+            lifeAssistance.put("type", "life_assistance");
+            serviceTypes.add(lifeAssistance);
+            
+            Map<String, Object> emergency = new java.util.HashMap<>();
+            emergency.put("id", 4);
+            emergency.put("name", "紧急救援");
+            emergency.put("description", "提供紧急情况下的救援和协助");
+            emergency.put("price", "100元/次");
+            emergency.put("icon", "Phone");
+            emergency.put("color", "#F56C6C");
+            emergency.put("type", "emergency");
+            serviceTypes.add(emergency);
+            
+            return Result.success(serviceTypes);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }

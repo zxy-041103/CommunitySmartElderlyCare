@@ -1,209 +1,140 @@
 package com.community.elderly.service.elderly.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.community.elderly.dto.elderly.CreateEmergencyHelpRequest;
-import com.community.elderly.dto.elderly.UpdateHelpStatusRequest;
 import com.community.elderly.entity.EmergencyHelp;
-import com.community.elderly.entity.User;
-
 import com.community.elderly.mapper.elderly.ElderlyEmergencyMapper;
-
-import com.community.elderly.mapper.elderly.ElderlyProfileMapper;
 import com.community.elderly.service.elderly.ElderlyEmergencyService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import java.util.*;
-
-
-@Slf4j
 @Service
-public class ElderlyEmergencyServiceImpl extends ServiceImpl<ElderlyEmergencyMapper, EmergencyHelp> implements ElderlyEmergencyService {
-
-
+@Slf4j
+public class ElderlyEmergencyServiceImpl implements ElderlyEmergencyService {
 
     @Autowired
     private ElderlyEmergencyMapper elderlyEmergencyMapper;
 
-    @Autowired
-    private ElderlyProfileMapper elderlyProfileMapper;
-
-    
-
-    
-
-    
-
-    
-
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long submitEmergencyHelp(Long userId, CreateEmergencyHelpRequest request) {
-        log.info("提交紧急求助，用户ID：{}，求助类型：{}", userId, request.getHelpType());
-
-        User user = elderlyProfileMapper.selectById(userId);
-        if (user == null) {
-            throw new RuntimeException("用户不存在");
-        }
-
-        if (!"elderly".equals(user.getRoleType())) {
-            throw new RuntimeException("只有老人用户可以提交求助");
-        }
-
-        EmergencyHelp help = new EmergencyHelp();
-        help.setUserId(userId);
-        help.setHelpType(request.getHelpType());
-        help.setUrgency(request.getUrgency() != null ? request.getUrgency() : "high");
-        help.setDescription(request.getDescription());
-        help.setPhone(request.getPhone());
-        help.setLocation(request.getLocation());
-        help.setHelpStatus("pending");
-        help.setIsProcessed(0);
-
-        elderlyEmergencyMapper.insert(help);
-        log.info("求助记录创建成功，求助ID：{}", help.getId());
-
-        sendEmergencyNotification(help, user);
-        log.info("紧急求助通知发送成功，求助ID：{}", help.getId());
-
-        return help.getId();
-    }
-
-    private void sendEmergencyNotification(EmergencyHelp help, User user) {
-        // 发送通知逻辑
-    }
-
-    @Override
-    public boolean assignCaregiver(Long helpId, Long caregiverId) {
-        EmergencyHelp help = elderlyEmergencyMapper.selectById(helpId);
-        if (help == null) {
-            throw new RuntimeException("求助记录不存在");
-        }
-        help.setHandlerId(caregiverId);
-        help.setHelpStatus("assigned");
-        return elderlyEmergencyMapper.updateById(help) > 0;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean updateHelpStatus(Long helpId, UpdateHelpStatusRequest request) {
-        EmergencyHelp help = elderlyEmergencyMapper.selectById(helpId);
-        if (help == null) {
-            throw new RuntimeException("求助记录不存在");
-        }
-
-        help.setHelpStatus(request.getHelpStatus());
-        help.setHandleResult(request.getHandleResult());
-        help.setHandleTime(LocalDateTime.now());
-
-        return elderlyEmergencyMapper.updateById(help) > 0;
-    }
-
-    @Override
-    public IPage<EmergencyHelp> getHelpRecordsByUserId(Long userId, Integer page, Integer size) {
-        Page<EmergencyHelp> pageParam = new Page<>(page, size);
-        LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EmergencyHelp::getUserId, userId);
-        wrapper.orderByDesc(EmergencyHelp::getCreateTime);
-        return elderlyEmergencyMapper.selectPage(pageParam, wrapper);
-    }
-
-    @Override
-    public EmergencyHelp getHelpDetail(Long helpId) {
-        return elderlyEmergencyMapper.selectById(helpId);
-    }
-
-    @Override
-    public IPage<EmergencyHelp> getPendingHelpsForCaregiver(Long caregiverId, Integer page, Integer size) {
-        Page<EmergencyHelp> pageParam = new Page<>(page, size);
-        LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EmergencyHelp::getHandlerId, caregiverId);
-        wrapper.eq(EmergencyHelp::getHelpStatus, "pending");
-        wrapper.orderByDesc(EmergencyHelp::getCreateTime);
-        return elderlyEmergencyMapper.selectPage(pageParam, wrapper);
-    }
-
-    @Override
-    public IPage<EmergencyHelp> getAllHelpRecords(Integer page, Integer size, String status) {
-        Page<EmergencyHelp> pageParam = new Page<>(page, size);
-        LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
-        if (status != null && !status.isEmpty()) {
-            wrapper.eq(EmergencyHelp::getHelpStatus, status);
-        }
-        wrapper.orderByDesc(EmergencyHelp::getCreateTime);
-        return elderlyEmergencyMapper.selectPage(pageParam, wrapper);
-    }
-
-    @Override
-    public Map<String, Object> getEmergencyHelpStatistics() {
-        Map<String, Object> statistics = new HashMap<>();
+    public Map<String, Object> getEmergencyList(Long elderlyId, Integer pageNum, Integer pageSize,
+                                                 String type, String status, String startTime, String endTime) {
+        Map<String, Object> result = new HashMap<>();
         
-        // 统计总求助数
-        long total = elderlyEmergencyMapper.selectCount(null);
-        statistics.put("total", total);
-        
-        // 统计待处理求助数
-        long pending = elderlyEmergencyMapper.selectCount(new LambdaQueryWrapper<EmergencyHelp>()
-                .eq(EmergencyHelp::getHelpStatus, "pending"));
-        statistics.put("pending", pending);
-        
-        // 统计已处理求助数
-        long processed = elderlyEmergencyMapper.selectCount(new LambdaQueryWrapper<EmergencyHelp>()
-                .eq(EmergencyHelp::getIsProcessed, 1));
-        statistics.put("processed", processed);
-        
-        return statistics;
-    }
-
-    @Override
-    public List<EmergencyHelp> getRecentHelpRecords(int limit) {
-        LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(EmergencyHelp::getCreateTime);
-        wrapper.last("LIMIT " + limit);
-        return elderlyEmergencyMapper.selectList(wrapper);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean cancelHelp(Long helpId, Long userId) {
-        EmergencyHelp help = elderlyEmergencyMapper.selectById(helpId);
-        if (help == null) {
-            throw new RuntimeException("求助记录不存在");
+        try {
+            List<EmergencyHelp> emergencyList = elderlyEmergencyMapper.selectByUserId(elderlyId);
+            
+            // 按类型过滤
+            if (type != null && !type.isEmpty()) {
+                emergencyList = emergencyList.stream()
+                    .filter(e -> type.equals(e.getHelpType()))
+                    .collect(Collectors.toList());
+            }
+            
+            // 按状态过滤
+            if (status != null && !status.isEmpty()) {
+                emergencyList = emergencyList.stream()
+                    .filter(e -> status.equals(e.getHelpStatus()))
+                    .collect(Collectors.toList());
+            }
+            
+            // 按时间范围过滤
+            if (startTime != null && !startTime.isEmpty()) {
+                final LocalDateTime start = LocalDateTime.parse(startTime + "T00:00:00");
+                emergencyList = emergencyList.stream()
+                    .filter(e -> e.getCreateTime().isAfter(start) || e.getCreateTime().isEqual(start))
+                    .collect(Collectors.toList());
+            }
+            
+            // 如果没有传入结束时间，默认设置为当前时间，避免查询未来数据
+            final LocalDateTime end;
+            if (endTime != null && !endTime.isEmpty()) {
+                end = LocalDateTime.parse(endTime + "T23:59:59");
+            } else {
+                end = LocalDateTime.now();
+            }
+            
+            if (end != null) {
+                emergencyList = emergencyList.stream()
+                    .filter(e -> e.getCreateTime().isBefore(end) || e.getCreateTime().isEqual(end))
+                    .collect(Collectors.toList());
+            }
+            
+            // 按请求时间倒序排序
+            emergencyList.sort((a, b) -> b.getCreateTime().compareTo(a.getCreateTime()));
+            
+            // 分页
+            int total = emergencyList.size();
+            int fromIndex = (pageNum - 1) * pageSize;
+            int toIndex = Math.min(fromIndex + pageSize, total);
+            
+            List<EmergencyHelp> pageList = emergencyList.subList(fromIndex, toIndex);
+            
+            result.put("list", pageList);
+            result.put("total", total);
+            result.put("pageNum", pageNum);
+            result.put("pageSize", pageSize);
+            
+        } catch (Exception e) {
+            log.error("获取紧急求助列表失败", e);
+            throw new RuntimeException("获取紧急求助列表失败: " + e.getMessage());
         }
         
-        if (!help.getUserId().equals(userId)) {
-            throw new RuntimeException("只能取消自己的求助");
-        }
-        
-        help.setHelpStatus("cancelled");
-        help.setIsProcessed(1);
-        return elderlyEmergencyMapper.updateById(help) > 0;
+        return result;
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean completeHelp(Long helpId, Long caregiverId, String notes) {
-        EmergencyHelp help = elderlyEmergencyMapper.selectById(helpId);
-        if (help == null) {
-            throw new RuntimeException("求助记录不存在");
+    public void createEmergency(Long elderlyId, String type, String description) {
+        try {
+            EmergencyHelp emergency = new EmergencyHelp();
+            emergency.setUserId(elderlyId);
+            emergency.setHelpType(type);
+            emergency.setDescription(description);
+            emergency.setHelpStatus("pending");
+            emergency.setUrgency("high");
+            emergency.setIsProcessed(0);
+            emergency.setCreateTime(LocalDateTime.now());
+            emergency.setUpdateTime(LocalDateTime.now());
+            
+            elderlyEmergencyMapper.insert(emergency);
+            
+            log.info("老人 {} 创建紧急求助成功，类型: {}", elderlyId, type);
+        } catch (Exception e) {
+            log.error("创建紧急求助失败", e);
+            throw new RuntimeException("创建紧急求助失败: " + e.getMessage());
         }
-        
-        if (!help.getHandlerId().equals(caregiverId)) {
-            throw new RuntimeException("只能完成分配给自己的求助");
+    }
+
+    @Override
+    public void cancelEmergency(Long elderlyId, Long emergencyId) {
+        try {
+            EmergencyHelp emergency = elderlyEmergencyMapper.selectById(emergencyId);
+            
+            if (emergency == null) {
+                throw new RuntimeException("紧急求助记录不存在");
+            }
+            
+            if (!emergency.getUserId().equals(elderlyId)) {
+                throw new RuntimeException("无权取消此求助记录");
+            }
+            
+            if (!"pending".equals(emergency.getHelpStatus())) {
+                throw new RuntimeException("只能取消待处理的求助记录");
+            }
+            
+            emergency.setHelpStatus("cancelled");
+            emergency.setUpdateTime(LocalDateTime.now());
+            
+            elderlyEmergencyMapper.updateById(emergency);
+            
+            log.info("老人 {} 取消紧急求助成功，ID: {}", elderlyId, emergencyId);
+        } catch (Exception e) {
+            log.error("取消紧急求助失败", e);
+            throw new RuntimeException("取消紧急求助失败: " + e.getMessage());
         }
-        
-        help.setHelpStatus("completed");
-        help.setHandleResult(notes);
-        help.setIsProcessed(1);
-        help.setHandleTime(LocalDateTime.now());
-        return elderlyEmergencyMapper.updateById(help) > 0;
     }
 }

@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.elderly.common.Result;
+import com.community.elderly.dto.admin.UserRequestDTO;
 import com.community.elderly.entity.FamilyElderlyRelation;
 import com.community.elderly.entity.User;
 import com.community.elderly.mapper.family.FamilyRelationMapper;
@@ -110,12 +111,20 @@ public class AdminUserController {
      */
     @DeleteMapping("/users/{id}")
     @ApiOperation(value = "删除用户", notes = "逻辑删除用户")
-    public Result<?> deleteUser(@PathVariable Long id) {
-        User user = new User();
-        user.setId(id);
-        user.setIsDeleted(1);
-        elderlyProfileMapper.updateById(user);
-        return Result.success("删除成功");
+    public Result<Boolean> deleteUser(@PathVariable Long id) {
+        try {
+            User user = elderlyProfileMapper.selectById(id);
+            if (user == null) {
+                return Result.error("用户不存在");
+            }
+            
+            user.setIsDeleted(1);
+            user.setUpdateTime(LocalDateTime.now());
+            elderlyProfileMapper.updateById(user);
+            return Result.success("删除成功", true);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
     }
 
     /**
@@ -188,5 +197,101 @@ public class AdminUserController {
         relation.setAuditTime(LocalDateTime.now());
         familyRelationMapper.updateById(relation);
         return Result.success("已拒绝");
+    }
+
+    /**
+     * 新增用户
+     */
+    @PostMapping("/users")
+    @ApiOperation(value = "新增用户", notes = "新增用户")
+    public Result<User> createUser(@RequestBody UserRequestDTO userDTO) {
+        try {
+            // 将DTO转换为Entity
+            User user = new User();
+            user.setUsername(userDTO.getUsername());
+            user.setRealName(userDTO.getRealName());
+            user.setPhone(userDTO.getPhone());
+            user.setIdCard(userDTO.getIdCard());
+            user.setPassword(userDTO.getPassword());
+            user.setRoleType(userDTO.getRoleType());
+            user.setGender(userDTO.getGenderAsInteger()); // 转换性别
+            user.setAge(userDTO.getAge());
+            user.setAddress(userDTO.getAddress());
+            user.setIsEnabled(userDTO.getIsEnabled());
+            
+            User createdUser = userService.createUser(user);
+            return Result.success(createdUser);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 编辑用户
+     */
+    @PutMapping("/users/{id}")
+    @ApiOperation(value = "编辑用户", notes = "编辑用户信息")
+    public Result<User> updateUser(@PathVariable Long id, @RequestBody UserRequestDTO userDTO) {
+        try {
+            // 查询现有用户
+            User existingUser = elderlyProfileMapper.selectById(id);
+            if (existingUser == null) {
+                return Result.error("用户不存在");
+            }
+            
+            // 更新用户信息
+            existingUser.setUsername(userDTO.getUsername());
+            existingUser.setRealName(userDTO.getRealName());
+            existingUser.setIdCard(userDTO.getIdCard());
+            existingUser.setGender(userDTO.getGenderAsInteger()); // 转换性别
+            existingUser.setAge(userDTO.getAge());
+            existingUser.setAddress(userDTO.getAddress());
+            existingUser.setUpdateTime(LocalDateTime.now());
+            
+            // 加密手机号
+            if (userDTO.getPhone() != null && !userDTO.getPhone().isEmpty()) {
+                String encryptedPhone = aesUtil.encrypt(userDTO.getPhone());
+                existingUser.setPhone(encryptedPhone);
+            }
+            
+            // 更新密码（如果提供了）
+            if (userDTO.getPassword() != null && !userDTO.getPassword().isEmpty()) {
+                org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = 
+                    new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+                existingUser.setPassword(encoder.encode(userDTO.getPassword()));
+            }
+            
+            // 保存更新
+            elderlyProfileMapper.updateById(existingUser);
+            
+            // 返回更新后的用户（解密手机号）
+            User resultUser = elderlyProfileMapper.selectById(id);
+            if (resultUser.getPhone() != null && !resultUser.getPhone().isEmpty()) {
+                String decryptedPhone = aesUtil.decrypt(resultUser.getPhone());
+                resultUser.setPhone(decryptedPhone);
+            }
+            
+            return Result.success(resultUser);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 更新用户状态
+     */
+    @PutMapping("/users/{id}/status")
+    @ApiOperation(value = "更新用户状态", notes = "更新用户启用/禁用状态")
+    public Result<?> updateUserStatus(@PathVariable Long id, @RequestBody Map<String, Integer> request) {
+        try {
+            User user = new User();
+            user.setId(id);
+            user.setIsEnabled(request.get("isEnabled"));
+            user.setUpdateTime(LocalDateTime.now());
+            elderlyProfileMapper.updateById(user);
+            return Result.success("状态更新成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
     }
 }

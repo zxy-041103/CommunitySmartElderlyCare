@@ -20,15 +20,16 @@
         :data="activityList"
         style="width: 100%"
         border
+        :default-sort="{ prop: 'id', order: 'descending' }"
       >
-        <el-table-column prop="id" label="活动ID" width="80" />
+        <el-table-column prop="id" label="活动ID" width="100" sortable />
         <el-table-column prop="title" label="活动标题" min-width="200" />
         <el-table-column label="活动分类" width="120">
           <template #default="scope">
             {{ getCategoryName(scope.row.activityCategoryId) }}
           </template>
         </el-table-column>
-        <el-table-column prop="activityTime" label="活动时间" width="180">
+        <el-table-column prop="activityTime" label="活动时间" width="180" sortable>
           <template #default="scope">
             {{ formatDateTime(scope.row.activityTime) }}
           </template>
@@ -274,7 +275,12 @@ const handleAddActivity = () => {
 // 编辑活动
 const handleEditActivity = (activity) => {
   isEdit.value = true
-  activityForm.value = { ...activity }
+  // 将后端的整数（0/1）转换为布尔值
+  activityForm.value = { 
+    ...activity,
+    isTop: activity.isTop === 1,
+    isPublished: activity.isPublished === 1
+  }
   // 处理目标角色
   targetRoles.value = activity.targetRole ? activity.targetRole.split(',') : ['elderly', 'family']
   dialogVisible.value = true
@@ -320,18 +326,25 @@ const submitForm = async () => {
     // 处理目标角色
     activityForm.value.targetRole = targetRoles.value.join(',')
     
+    // 转换布尔值为整数（0/1）
+    const formData = {
+      ...activityForm.value,
+      isTop: activityForm.value.isTop ? 1 : 0,
+      isPublished: activityForm.value.isPublished ? 1 : 0
+    }
+    
     let res
     if (isEdit.value) {
       res = await request({
         url: `/admin/activities/${activityForm.value.id}`,
         method: 'put',
-        data: activityForm.value
+        data: formData
       })
     } else {
       res = await request({
         url: '/admin/activities',
         method: 'post',
-        data: activityForm.value
+        data: formData
       })
     }
     

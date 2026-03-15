@@ -71,7 +71,7 @@
         </el-table-column>
         <el-table-column prop="gender" label="性别" width="80">
           <template #default="scope">
-            {{ scope.row.gender === 'male' ? '男' : '女' }}
+            {{ scope.row.gender === 1 || scope.row.gender === 'male' ? '男' : '女' }}
           </template>
         </el-table-column>
         <el-table-column prop="age" label="年龄" width="80" />
@@ -480,11 +480,13 @@ const refreshUsers = () => {
 };
 
 // 分页
-const handlePageChange = () => {
+const handlePageChange = (newPage) => {
+  currentPage.value = newPage;
   fetchUsers();
 };
 
-const handleSizeChange = () => {
+const handleSizeChange = (newSize) => {
+  pageSize.value = newSize;
   currentPage.value = 1;
   fetchUsers();
 };
@@ -499,7 +501,12 @@ const openAddUserDialog = () => {
 // 编辑用户
 const editUser = (user) => {
   isEditMode.value = true;
-  userForm.value = { ...user };
+  // 将后端的整数gender转换为前端字符串
+  const genderStr = user.gender === 1 ? 'male' : (user.gender === 0 ? 'female' : 'male');
+  userForm.value = { 
+    ...user,
+    gender: genderStr
+  };
   userDialogVisible.value = true;
 };
 
@@ -560,9 +567,7 @@ const submitUserForm = async () => {
       }
     } catch (error) {
       console.error('提交用户表单失败:', error);
-      ElMessage.success(isEditMode.value ? '用户已更新' : '用户已新增');
-      userDialogVisible.value = false;
-      fetchUsers();
+      ElMessage.error('操作失败，请稍后重试');
     } finally {
       submitting.value = false;
     }
@@ -585,7 +590,7 @@ const updateUserStatus = async (user) => {
     }
   } catch (error) {
     console.error('更新用户状态失败:', error);
-    ElMessage.success(`用户状态已更新为: ${user.isEnabled === 1 ? '启用' : '禁用'}`);
+    ElMessage.error('状态更新失败，请稍后重试');
     }
 };
 
@@ -605,8 +610,7 @@ const approveRelation = async (relation) => {
     }
   } catch (error) {
     console.error('审核关联失败:', error);
-    ElMessage.success('关联申请已通过');
-    fetchPendingRelations();
+    ElMessage.error('审核失败，请稍后重试');
   }
 };
 
@@ -626,8 +630,7 @@ const rejectRelation = async (relation) => {
     }
   } catch (error) {
     console.error('拒绝关联失败:', error);
-    ElMessage.success('关联申请已拒绝');
-    fetchPendingRelations();
+    ElMessage.error('拒绝失败，请稍后重试');
   }
 };
 

@@ -41,6 +41,28 @@ public class EmergencyHelp {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
+    @TableField(exist = false) // 数据库表中不存在该字段
+    private String elderlyName; // 老人姓名，用于关联查询显示
+
+    @TableField(exist = false) // 数据库表中不存在该字段
+    private String handlerName; // 处理人姓名，用于关联查询显示
+
+    public String getElderlyName() {
+        return elderlyName;
+    }
+
+    public void setElderlyName(String elderlyName) {
+        this.elderlyName = elderlyName;
+    }
+
+    public String getHandlerName() {
+        return handlerName;
+    }
+
+    public void setHandlerName(String handlerName) {
+        this.handlerName = handlerName;
+    }
+
     public Long getId() {
         return id;
     }

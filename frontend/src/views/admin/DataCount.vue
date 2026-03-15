@@ -9,144 +9,6 @@
       </div>
     </div>
 
-    <!-- 核心指标卡片 -->
-    <div class="metrics-section">
-      <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-info">
-                <div class="metric-label">健康监测覆盖率</div>
-                <div class="metric-value">{{ metrics.healthCoverage }}%</div>
-                <div class="metric-trend" :class="metrics.healthCoverageTrend >= 0 ? 'up' : 'down'">
-                  <el-icon><ArrowUp v-if="metrics.healthCoverageTrend >= 0" /><ArrowDown v-else /></el-icon>
-                  <span>{{ Math.abs(metrics.healthCoverageTrend) }}%</span>
-                  <span class="trend-text">较上期</span>
-                </div>
-              </div>
-              <div class="metric-icon health">
-                <el-icon :size="40"><Monitor /></el-icon>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-info">
-                <div class="metric-label">服务核销率</div>
-                <div class="metric-value">{{ metrics.serviceVerification }}%</div>
-                <div class="metric-trend" :class="metrics.serviceVerificationTrend >= 0 ? 'up' : 'down'">
-                  <el-icon><ArrowUp v-if="metrics.serviceVerificationTrend >= 0" /><ArrowDown v-else /></el-icon>
-                  <span>{{ Math.abs(metrics.serviceVerificationTrend) }}%</span>
-                  <span class="trend-text">较上期</span>
-                </div>
-              </div>
-              <div class="metric-icon service">
-                <el-icon :size="40"><Check /></el-icon>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-info">
-                <div class="metric-label">紧急求助响应率</div>
-                <div class="metric-value">{{ metrics.emergencyResponse }}%</div>
-                <div class="metric-trend" :class="metrics.emergencyResponseTrend >= 0 ? 'up' : 'down'">
-                  <el-icon><ArrowUp v-if="metrics.emergencyResponseTrend >= 0" /><ArrowDown v-else /></el-icon>
-                  <span>{{ Math.abs(metrics.emergencyResponseTrend) }}%</span>
-                  <span class="trend-text">较上期</span>
-                </div>
-              </div>
-              <div class="metric-icon emergency">
-                <el-icon :size="40"><Warning /></el-icon>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card class="metric-card" shadow="hover">
-            <div class="metric-content">
-              <div class="metric-info">
-                <div class="metric-label">老人满意度</div>
-                <div class="metric-value">{{ metrics.satisfaction }}%</div>
-                <div class="metric-trend" :class="metrics.satisfactionTrend >= 0 ? 'up' : 'down'">
-                  <el-icon><ArrowUp v-if="metrics.satisfactionTrend >= 0" /><ArrowDown v-else /></el-icon>
-                  <span>{{ Math.abs(metrics.satisfactionTrend) }}%</span>
-                  <span class="trend-text">较上期</span>
-                </div>
-              </div>
-              <div class="metric-icon satisfaction">
-                <el-icon :size="40"><Star /></el-icon>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
-
-    <!-- 图表区域 -->
-    <div class="charts-section">
-      <el-row :gutter="20">
-        <!-- 健康异常率趋势 -->
-        <el-col :xs="24" :lg="12">
-          <el-card class="chart-card" shadow="hover">
-            <template #header>
-              <div class="chart-header">
-                <span class="chart-title">健康异常率趋势</span>
-                <el-radio-group v-model="timeRange" size="small" @change="handleTimeRangeChange">
-                  <el-radio-button label="week">本周</el-radio-button>
-                  <el-radio-button label="month">本月</el-radio-button>
-                  <el-radio-button label="year">本年</el-radio-button>
-                </el-radio-group>
-              </div>
-            </template>
-            <div ref="healthChartRef" class="chart-container"></div>
-          </el-card>
-        </el-col>
-
-        <!-- 护工工作量分布 -->
-        <el-col :xs="24" :lg="12">
-          <el-card class="chart-card" shadow="hover">
-            <template #header>
-              <div class="chart-header">
-                <span class="chart-title">护工工作量分布</span>
-              </div>
-            </template>
-            <div ref="workloadChartRef" class="chart-container"></div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <el-row :gutter="20" class="mt-20">
-        <!-- 服务类型占比 -->
-        <el-col :xs="24" :lg="12">
-          <el-card class="chart-card" shadow="hover">
-            <template #header>
-              <div class="chart-header">
-                <span class="chart-title">服务类型占比</span>
-              </div>
-            </template>
-            <div ref="serviceTypeChartRef" class="chart-container"></div>
-          </el-card>
-        </el-col>
-
-        <!-- 老人健康状态分布 -->
-        <el-col :xs="24" :lg="12">
-          <el-card class="chart-card" shadow="hover">
-            <template #header>
-              <div class="chart-header">
-                <span class="chart-title">老人健康状态分布</span>
-              </div>
-            </template>
-            <div ref="healthStatusChartRef" class="chart-container"></div>
-          </el-card>
-        </el-col>
-      </el-row>
-    </div>
-
     <!-- 数据概览 -->
     <el-card class="overview-card" shadow="hover">
       <template #header>
@@ -168,6 +30,153 @@
           </div>
         </el-col>
       </el-row>
+    </el-card>
+
+    <!-- 数据分析模块 -->
+    <el-card class="analysis-card" shadow="hover">
+      <template #header>
+        <div class="analysis-header">
+          <span class="analysis-title">数据分析</span>
+          <el-radio-group v-model="timeRange" size="small" @change="handleTimeRangeChange">
+            <el-radio-button label="week">本周</el-radio-button>
+            <el-radio-button label="month">本月</el-radio-button>
+            <el-radio-button label="year">本年</el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
+
+      <!-- 核心指标卡片 -->
+      <div class="metrics-section">
+        <el-row :gutter="20">
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-card class="metric-card" shadow="hover">
+              <div class="metric-content">
+                <div class="metric-info">
+                  <div class="metric-label">健康监测覆盖率</div>
+                  <div class="metric-value">{{ metrics.healthCoverage }}%</div>
+                  <div class="metric-trend" :class="metrics.healthCoverageTrend >= 0 ? 'up' : 'down'">
+                    <el-icon><ArrowUp v-if="metrics.healthCoverageTrend >= 0" /><ArrowDown v-else /></el-icon>
+                    <span>{{ Math.abs(metrics.healthCoverageTrend) }}%</span>
+                    <span class="trend-text">较上期</span>
+                  </div>
+                </div>
+                <div class="metric-icon health">
+                  <el-icon :size="40"><Monitor /></el-icon>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-card class="metric-card" shadow="hover">
+              <div class="metric-content">
+                <div class="metric-info">
+                  <div class="metric-label">服务核销率</div>
+                  <div class="metric-value">{{ metrics.serviceVerification }}%</div>
+                  <div class="metric-trend" :class="metrics.serviceVerificationTrend >= 0 ? 'up' : 'down'">
+                    <el-icon><ArrowUp v-if="metrics.serviceVerificationTrend >= 0" /><ArrowDown v-else /></el-icon>
+                    <span>{{ Math.abs(metrics.serviceVerificationTrend) }}%</span>
+                    <span class="trend-text">较上期</span>
+                  </div>
+                </div>
+                <div class="metric-icon service">
+                  <el-icon :size="40"><Check /></el-icon>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-card class="metric-card" shadow="hover">
+              <div class="metric-content">
+                <div class="metric-info">
+                  <div class="metric-label">紧急求助响应率</div>
+                  <div class="metric-value">{{ metrics.emergencyResponse }}%</div>
+                  <div class="metric-trend" :class="metrics.emergencyResponseTrend >= 0 ? 'up' : 'down'">
+                    <el-icon><ArrowUp v-if="metrics.emergencyResponseTrend >= 0" /><ArrowDown v-else /></el-icon>
+                    <span>{{ Math.abs(metrics.emergencyResponseTrend) }}%</span>
+                    <span class="trend-text">较上期</span>
+                  </div>
+                </div>
+                <div class="metric-icon emergency">
+                  <el-icon :size="40"><Warning /></el-icon>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="6">
+            <el-card class="metric-card" shadow="hover">
+              <div class="metric-content">
+                <div class="metric-info">
+                  <div class="metric-label">老人满意度</div>
+                  <div class="metric-value">{{ metrics.satisfaction }}%</div>
+                  <div class="metric-trend" :class="metrics.satisfactionTrend >= 0 ? 'up' : 'down'">
+                    <el-icon><ArrowUp v-if="metrics.satisfactionTrend >= 0" /><ArrowDown v-else /></el-icon>
+                    <span>{{ Math.abs(metrics.satisfactionTrend) }}%</span>
+                    <span class="trend-text">较上期</span>
+                  </div>
+                </div>
+                <div class="metric-icon satisfaction">
+                  <el-icon :size="40"><Star /></el-icon>
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
+
+      <!-- 图表区域 -->
+      <div class="charts-section">
+        <el-row :gutter="20">
+          <!-- 健康异常率趋势 -->
+          <el-col :xs="24" :lg="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="chart-header">
+                  <span class="chart-title">健康异常率趋势</span>
+                </div>
+              </template>
+              <div ref="healthChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+
+          <!-- 护工工作量分布 -->
+          <el-col :xs="24" :lg="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="chart-header">
+                  <span class="chart-title">护工工作量分布</span>
+                </div>
+              </template>
+              <div ref="workloadChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <el-row :gutter="20" class="mt-20">
+          <!-- 服务类型占比 -->
+          <el-col :xs="24" :lg="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="chart-header">
+                  <span class="chart-title">服务类型占比</span>
+                </div>
+              </template>
+              <div ref="serviceTypeChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+
+          <!-- 老人健康状态分布 -->
+          <el-col :xs="24" :lg="12">
+            <el-card class="chart-card" shadow="hover">
+              <template #header>
+                <div class="chart-header">
+                  <span class="chart-title">老人健康状态分布</span>
+                </div>
+              </template>
+              <div ref="healthStatusChartRef" class="chart-container"></div>
+            </el-card>
+          </el-col>
+        </el-row>
+      </div>
     </el-card>
   </div>
 </template>
@@ -256,6 +265,14 @@ const fetchStatisticsData = async () => {
 
     if (response.code === 200 && response.data) {
       const data = response.data;
+      
+      // 调试日志：打印健康趋势数据
+      console.log('=== 调试信息 ===');
+      console.log('时间范围:', timeRange.value);
+      console.log('健康趋势数据:', data.healthTrend);
+      console.log('健康趋势labels:', data.healthTrend?.labels);
+      console.log('健康趋势values:', data.healthTrend?.values);
+      console.log('================');
       
       // 更新核心指标
       metrics.value = {
@@ -538,8 +555,17 @@ const updateAllCharts = () => {
   if (serviceTypeChart && chartData.value.serviceTypeRatio) {
     const data = chartData.value.serviceTypeRatio.map((item, index) => {
       const colors = ['#409EFF', '#67C23A', '#E6A23C', '#F56C6C', '#909399', '#9B59B6'];
+      // 服务类型汉化
+      const serviceTypeMap = {
+        'meal': '餐饮服务',
+        'health': '健康护理',
+        'clean': '清洁服务',
+        'home_care': '居家护理',
+        'medical_care': '医疗护理',
+        'life_assistance': '生活协助'
+      };
       return {
-        name: item.name,
+        name: serviceTypeMap[item.name] || item.name,
         value: item.value,
         itemStyle: { color: colors[index % colors.length] }
       };
@@ -554,15 +580,21 @@ const updateAllCharts = () => {
     const statusColors = {
       '健康': '#67C23A',
       '正常': '#67C23A',
+      '亚健康': '#E6A23C',
       '一般': '#E6A23C',
       '需关注': '#F56C6C',
       '异常': '#F56C6C',
-      '紧急': '#909399'
+      '紧急': '#F56C6C'
+    };
+    // 健康状态汉化
+    const healthStatusMap = {
+      'normal': '健康',
+      'abnormal': '异常'
     };
     const data = chartData.value.healthStatusDistribution.map(item => ({
-      name: item.name,
+      name: healthStatusMap[item.name] || item.name,
       value: item.value,
-      itemStyle: { color: statusColors[item.name] || '#409EFF' }
+      itemStyle: { color: statusColors[healthStatusMap[item.name] || item.name] || '#409EFF' }
     }));
     healthStatusChart.setOption({
       series: [{ data: data }]
@@ -622,6 +654,7 @@ onUnmounted(() => {
 
 // 指标卡片
 .metrics-section {
+  margin-top: 30px;
   margin-bottom: 30px;
 }
 
@@ -706,9 +739,27 @@ onUnmounted(() => {
   }
 }
 
+// 数据分析模块
+.analysis-card {
+  border-radius: 12px;
+  margin-bottom: 30px;
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.analysis-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+}
+
 // 图表区域
 .charts-section {
-  margin-bottom: 30px;
+  margin-top: 30px;
 }
 
 .chart-card {

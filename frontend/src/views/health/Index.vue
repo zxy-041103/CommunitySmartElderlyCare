@@ -15,17 +15,17 @@
 
           <el-row :gutter="20" class="statistics-row">
             <el-col :span="6">
-              <el-statistic title="监测人数" :value="statistics.total" />
+              <el-statistic title="监测次数" :value="statistics.total" />
             </el-col>
             <el-col :span="6">
-              <el-statistic title="正常人数" :value="statistics.normal">
+              <el-statistic title="正常次数" :value="statistics.normal">
                 <template #suffix>
                   <el-icon color="#67C23A"><CircleCheck /></el-icon>
                 </template>
               </el-statistic>
             </el-col>
             <el-col :span="6">
-              <el-statistic title="异常人数" :value="statistics.abnormal">
+              <el-statistic title="异常次数" :value="statistics.abnormal">
                 <template #suffix>
                   <el-icon color="#E6A23C"><Warning /></el-icon>
                 </template>
@@ -61,7 +61,7 @@
                   <el-option 
                     v-for="item in elderlyList" 
                     :key="item.id" 
-                    :label="item.name" 
+                    :label="item.realName || item.name" 
                     :value="item.id" 
                   />
                 </el-select>
@@ -194,6 +194,7 @@
           width="100"
           align="center"
         />
+
         <el-table-column
           prop="status"
           label="健康状态"
@@ -264,7 +265,7 @@
             <el-option
               v-for="item in elderlyList"
               :key="item.id"
-              :label="item.name"
+              :label="item.realName || item.name"
               :value="item.id"
             />
           </el-select>
@@ -499,12 +500,42 @@ const fetchList = async () => {
     const params = {
       page: pagination.page,
       size: pagination.size,
-      ...searchForm,
+      name: searchForm.name,
+      status: searchForm.status,
+      startDate: searchForm.dateRange && searchForm.dateRange.length > 0 ? searchForm.dateRange[0] : null,
+      endDate: searchForm.dateRange && searchForm.dateRange.length > 1 ? searchForm.dateRange[1] : null
     };
+    console.log('健康记录列表请求参数:', params);
     const res = await getHealthList(params);
-    tableData.value = res.data.records || [];
-    pagination.total = res.data.total || 0;
+    console.log('健康记录列表API响应:', res);
+    console.log('健康记录列表数据:', res.data);
+    console.log('健康记录列表:', res.data?.list);
+    console.log('健康记录总数:', res.data?.total);
+    // 处理数据，确保字段存在且格式正确
+    const list = res.data?.list || [];
+    console.log('原始列表数据:', list);
+    tableData.value = list.map(item => {
+      console.log('处理单项数据:', item);
+      return {
+        ...item,
+        id: item.id,
+        elderlyName: item.elderlyName || '-',
+        bloodPressure: item.systolicPressure && item.diastolicPressure 
+          ? `${item.systolicPressure}/${item.diastolicPressure}` 
+          : '-',
+        heartRate: item.heartRate !== null && item.heartRate !== undefined ? item.heartRate : '-',
+        bloodSugar: item.bloodSugar !== null && item.bloodSugar !== undefined ? item.bloodSugar : '-',
+        temperature: item.temperature !== null && item.temperature !== undefined ? item.temperature : '-',
+        weight: item.weight !== null && item.weight !== undefined ? item.weight : '-',
+        recordTime: item.monitorTime || item.createTime || '-',
+        status: item.healthStatus || item.status || '-',
+        remark: item.description || '-'
+      };
+    });
+    console.log('处理后的表格数据:', tableData.value);
+    pagination.total = res.data?.total || 0;
   } catch (error) {
+    console.error('获取健康记录列表失败:', error);
     ElMessage.error("获取健康记录列表失败");
   } finally {
     loading.value = false;
@@ -514,7 +545,11 @@ const fetchList = async () => {
 const fetchStatistics = async () => {
   try {
     const res = await getHealthStatistics();
-    Object.assign(statistics, res.data);
+    const data = res.data || {};
+    statistics.total = data.totalCount || 0;
+    statistics.normal = data.normalCount || 0;
+    statistics.abnormal = data.abnormalCount || 0;
+    statistics.today = data.todayCount || 0;
   } catch (error) {
     console.error("获取统计数据失败", error);
   }
@@ -548,8 +583,8 @@ const initTrendChart = async () => {
       params.startDate = trendDateRange.value[0];
       params.endDate = trendDateRange.value[1];
     } else {
-      // 默认查询最近7天
-      params.days = 7;
+      // 默认查询最近30天
+      params.days = 30;
     }
     
     // 根据查询类型调用不同API
@@ -621,12 +656,32 @@ const initTrendChart = async () => {
       return;
     }
 
+    // 获取老人姓名
+    let elderlyName = '';
+    if (trendQueryType.value === 'single' && trendSelectedElderly.value) {
+      const elderly = elderlyList.value.find(item => item.id === trendSelectedElderly.value);
+      if (elderly) {
+        elderlyName = elderly.realName || elderly.name;
+      }
+    }
+
     const option = {
+      title: {
+        text: trendQueryType.value === 'single' ? `${elderlyName}的健康数据趋势` : '所有老人健康数据趋势',
+        left: 'center',
+        textStyle: { fontSize: 14, fontWeight: 'normal' }
+      },
       tooltip: {
         trigger: "axis",
       },
       legend: {
         data: ["平均心率", "收缩压", "平均血糖"],
+        top: 30,
+        left: 'center',
+        itemGap: 20,
+        textStyle: {
+          fontSize: 12
+        }
       },
       xAxis: {
         type: "category",
@@ -799,8 +854,14 @@ const handleSubmit = async () => {
       submitLoading.value = true;
       try {
         const data = {
-          ...form,
-          bloodPressure: `${form.systolicPressure}/${form.diastolicPressure}`,
+          userId: form.elderlyId,
+          bloodPressureSystolic: form.systolicPressure,
+          bloodPressureDiastolic: form.diastolicPressure,
+          heartRate: form.heartRate,
+          bloodSugar: form.bloodSugar,
+          bodyTemperature: form.temperature,
+          weight: form.weight,
+          note: form.remark
         };
         if (form.id) {
           await updateHealth(form.id, data);

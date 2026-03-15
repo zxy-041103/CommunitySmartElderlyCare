@@ -81,8 +81,10 @@ public class HealthDataController {
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String status) {
-        Map<String, Object> result = elderlyHealthService.getHealthDataList(page, size, name, status);
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        Map<String, Object> result = elderlyHealthService.getHealthDataList(page, size, name, status, startDate, endDate);
         return Result.success(result);
     }
 

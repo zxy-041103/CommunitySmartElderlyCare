@@ -1,71 +1,24 @@
-import request from "../request";
+import request from "@/utils/request";
 
-export function getHealthList(params) {
+export function queryHealthData(params) {
   return request({
-    url: "/health/list",
+    url: "/elderly/health-data",
     method: "get",
     params,
   });
 }
 
-export function getHealthDetail(id) {
+export function inputHealthData(data) {
   return request({
-    url: `/health/${id}`,
-    method: "get",
-  });
-}
-
-export function createHealth(data) {
-  return request({
-    url: "/health/input",
+    url: "/elderly/health-data",
     method: "post",
     data,
   });
 }
 
-export function updateHealth(id, data) {
+export function deleteHealthData(id) {
   return request({
-    url: `/health/${id}`,
-    method: "put",
-    data,
-  });
-}
-
-export function deleteHealth(id) {
-  return request({
-    url: `/health/${id}`,
+    url: `/elderly/health-data/${id}`,
     method: "delete",
-  });
-}
-
-export function getHealthStatistics(params) {
-  return request({
-    url: "/health/statistics",
-    method: "get",
-    params,
-  });
-}
-
-export function getHealthTrend(elderlyId, params) {
-  return request({
-    url: `/health/trend/${elderlyId}`,
-    method: "get",
-    params,
-  });
-}
-
-export function getAllHealthTrend(params) {
-  return request({
-    url: "/health/trend/all",
-    method: "get",
-    params,
-  });
-}
-
-export function getAbnormalHealthList(params) {
-  return request({
-    url: "/health/warnings",
-    method: "get",
-    params,
   });
 }

@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.elderly.dto.elderly.CreateEmergencyHelpRequest;
 import com.community.elderly.dto.elderly.UpdateHelpStatusRequest;
 import com.community.elderly.entity.EmergencyHelp;
-import com.community.elderly.service.elderly.ElderlyEmergencyService;
+import com.community.elderly.service.elderly.EmergencyHelpService;
 import com.community.elderly.common.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -29,7 +29,7 @@ import java.util.Map;
 public class EmergencyHelpController {
 
     @Autowired
-    private ElderlyEmergencyService elderlyEmergencyService;
+    private EmergencyHelpService emergencyHelpService;
 
     /**
      * 一键求助提交
@@ -46,7 +46,7 @@ public class EmergencyHelpController {
             Authentication authentication) {
         try {
             Long userId = Long.parseLong(authentication.getName());
-            Long helpId = elderlyEmergencyService.submitEmergencyHelp(userId, request);
+            Long helpId = emergencyHelpService.submitEmergencyHelp(userId, request);
             return Result.success(helpId);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -62,12 +62,10 @@ public class EmergencyHelpController {
      */
     @PostMapping("/{helpId}/assign")
     @ApiOperation(value = "求助单分配", notes = "自动分配就近护工处理求助")
-    public Result<Boolean> assignCaregiver(
+    public Result<Map<String, Object>> assignCaregiver(
             @ApiParam(value = "求助ID", required = true) @PathVariable Long helpId) {
         try {
-            // 这里简化处理，实际应该根据地理位置等因素选择合适的护工
-            Long caregiverId = 1L; // 示例护工ID
-            boolean result = elderlyEmergencyService.assignCaregiver(helpId, caregiverId);
+            Map<String, Object> result = emergencyHelpService.assignCaregiver(helpId);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -90,7 +88,8 @@ public class EmergencyHelpController {
             @Valid @RequestBody UpdateHelpStatusRequest request,
             Authentication authentication) {
         try {
-            boolean result = elderlyEmergencyService.updateHelpStatus(helpId, request);
+            Long handlerId = Long.parseLong(authentication.getName());
+            boolean result = emergencyHelpService.updateHelpStatus(helpId, handlerId, request);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -114,7 +113,7 @@ public class EmergencyHelpController {
             Authentication authentication) {
         try {
             Long userId = Long.parseLong(authentication.getName());
-            IPage<EmergencyHelp> records = elderlyEmergencyService.getHelpRecordsByUserId(userId, page, size);
+            IPage<EmergencyHelp> records = emergencyHelpService.getHelpRecords(userId, page, size);
             return Result.success(records);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -132,7 +131,7 @@ public class EmergencyHelpController {
     public Result<EmergencyHelp> getHelpDetail(
             @ApiParam(value = "求助ID", required = true) @PathVariable Long helpId) {
         try {
-            EmergencyHelp help = elderlyEmergencyService.getHelpDetail(helpId);
+            EmergencyHelp help = emergencyHelpService.getHelpDetail(helpId);
             return Result.success(help);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -153,7 +152,7 @@ public class EmergencyHelpController {
             @ApiParam(value = "每页大小", defaultValue = "10") @RequestParam(defaultValue = "10") Integer size) {
         try {
             Page<EmergencyHelp> pageParam = new Page<>(page, size);
-            IPage<EmergencyHelp> records = elderlyEmergencyService.page(pageParam);
+            IPage<EmergencyHelp> records = emergencyHelpService.getAllHelpRecords(page, size);
             return Result.success(records);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -176,7 +175,7 @@ public class EmergencyHelpController {
             Page<EmergencyHelp> pageParam = new Page<>(page, size);
             LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(EmergencyHelp::getHelpStatus, "pending");
-            IPage<EmergencyHelp> records = elderlyEmergencyService.page(pageParam, wrapper);
+            IPage<EmergencyHelp> records = emergencyHelpService.getPendingHelpRecords(page, size);
             return Result.success(records);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -202,7 +201,7 @@ public class EmergencyHelpController {
             Page<EmergencyHelp> pageParam = new Page<>(page, size);
             LambdaQueryWrapper<EmergencyHelp> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(EmergencyHelp::getHandlerId, handlerId);
-            IPage<EmergencyHelp> records = elderlyEmergencyService.page(pageParam, wrapper);
+            IPage<EmergencyHelp> records = emergencyHelpService.getHelpRecordsByHandler(handlerId, page, size);
             return Result.success(records);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -218,14 +217,7 @@ public class EmergencyHelpController {
     @ApiOperation(value = "获取求助统计", notes = "获取紧急求助的统计信息")
     public Result<Map<String, Object>> getHelpStatistics() {
         try {
-            Map<String, Object> statistics = new HashMap<>();
-            statistics.put("total", elderlyEmergencyService.count());
-            LambdaQueryWrapper<EmergencyHelp> pendingWrapper = new LambdaQueryWrapper<>();
-            pendingWrapper.eq(EmergencyHelp::getHelpStatus, "pending");
-            statistics.put("pending", elderlyEmergencyService.count(pendingWrapper));
-            LambdaQueryWrapper<EmergencyHelp> handledWrapper = new LambdaQueryWrapper<>();
-            handledWrapper.eq(EmergencyHelp::getHelpStatus, "handled");
-            statistics.put("handled", elderlyEmergencyService.count(handledWrapper));
+            Map<String, Object> statistics = emergencyHelpService.getHelpStatistics();
             return Result.success(statistics);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -259,7 +251,7 @@ public class EmergencyHelpController {
             if (type != null && !type.isEmpty()) {
                 wrapper.eq(EmergencyHelp::getHelpType, type);
             }
-            IPage<EmergencyHelp> records = elderlyEmergencyService.page(pageParam, wrapper);
+            IPage<EmergencyHelp> records = emergencyHelpService.getAllHelpRecords(page, size);
             Map<String, Object> result = new HashMap<>();
             result.put("records", records.getRecords());
             result.put("total", records.getTotal());
@@ -282,16 +274,7 @@ public class EmergencyHelpController {
     public Result<Map<String, Object>> getHelpTrend(
             @ApiParam(value = "天数", defaultValue = "7") @RequestParam(defaultValue = "7") Integer days) {
         try {
-            Map<String, Object> trend = new HashMap<>();
-            List<String> dates = new ArrayList<>();
-            List<Long> counts = new ArrayList<>();
-            for (int i = days - 1; i >= 0; i--) {
-                LocalDateTime date = LocalDateTime.now().minusDays(i);
-                dates.add(date.format(DateTimeFormatter.ofPattern("MM-dd")));
-                counts.add(0L);
-            }
-            trend.put("dates", dates);
-            trend.put("counts", counts);
+            Map<String, Object> trend = emergencyHelpService.getHelpTrend(days);
             return Result.success(trend);
         } catch (Exception e) {
             return Result.error(e.getMessage());

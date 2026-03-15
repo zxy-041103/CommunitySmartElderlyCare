@@ -10,5 +10,6 @@ public class HealthDataInputRequest {
     private Double heartRate;
     private Double bloodSugar;
     private Double bodyTemperature;
+    private Double weight;
     private String note;
 }

@@ -37,7 +37,20 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
 
     @PostConstruct
     public void init() {
-        redisEnabled = redisTemplate != null;
+        // 检查Redis连接是否可用
+        if (redisTemplate != null) {
+            try {
+                redisTemplate.getConnectionFactory().getConnection().ping();
+                redisEnabled = true;
+                log.info("Redis连接成功，已启用缓存功能");
+            } catch (Exception e) {
+                redisEnabled = false;
+                log.warn("Redis连接失败，已禁用缓存功能: {}", e.getMessage());
+            }
+        } else {
+            redisEnabled = false;
+            log.warn("RedisTemplate未配置，已禁用缓存功能");
+        }
     }
 
     @Override
@@ -49,6 +62,7 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         healthData.setHeartRate(request.getHeartRate());
         healthData.setBloodSugar(request.getBloodSugar());
         healthData.setTemperature(request.getBodyTemperature());
+        healthData.setWeight(request.getWeight());
         healthData.setDescription(request.getNote());
         healthData.setMonitorTime(LocalDateTime.now());
         healthData.setCreateTime(LocalDateTime.now());
@@ -79,19 +93,30 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         // 尝试从缓存获取
         String cacheKey = HEALTH_DATA_PREFIX + "query:" + request.getUserId() + ":" + request.getStartTime() + ":" + request.getEndTime();
         if (redisEnabled) {
-            Object cachedResult = redisTemplate.opsForValue().get(cacheKey);
-            if (cachedResult != null && cachedResult instanceof Map) {
-                @SuppressWarnings("unchecked")
-                Map<String, Object> resultMap = (Map<String, Object>) cachedResult;
-                return resultMap;
+            try {
+                Object cachedResult = redisTemplate.opsForValue().get(cacheKey);
+                if (cachedResult != null && cachedResult instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> resultMap = (Map<String, Object>) cachedResult;
+                    log.debug("从Redis缓存获取健康数据查询结果");
+                    return resultMap;
+                }
+            } catch (Exception e) {
+                log.warn("从Redis获取缓存失败，将从数据库查询: {}", e.getMessage());
             }
+        }
+
+        // 如果没有传入结束时间，默认设置为当前时间，避免查询未来数据
+        LocalDateTime endTime = request.getEndTime();
+        if (endTime == null) {
+            endTime = LocalDateTime.now();
         }
 
         // 从数据库查询
         List<HealthData> healthDataList = healthDataMapper.selectHealthDataByUserId(
                 request.getUserId(),
                 request.getStartTime(),
-                request.getEndTime(),
+                endTime,
                 (request.getPageNum() - 1) * request.getPageSize(),
                 request.getPageSize()
         );
@@ -99,7 +124,7 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         int total = healthDataMapper.countHealthDataByUserId(
                 request.getUserId(),
                 request.getStartTime(),
-                request.getEndTime()
+                endTime
         );
 
         result.put("list", healthDataList);
@@ -109,7 +134,12 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
 
         // 缓存查询结果
         if (redisEnabled) {
-            redisTemplate.opsForValue().set(cacheKey, result, CACHE_DURATION, TimeUnit.MINUTES);
+            try {
+                redisTemplate.opsForValue().set(cacheKey, result, CACHE_DURATION, TimeUnit.MINUTES);
+                log.debug("健康数据查询结果已缓存到Redis");
+            } catch (Exception e) {
+                log.warn("缓存健康数据查询结果到Redis失败: {}", e.getMessage());
+            }
         }
 
         return result;
@@ -183,18 +213,25 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
 
     @Override
     public HealthWarningThreshold configureWarningThreshold(HealthWarningThresholdRequest request) {
+        // 先根据指标类型查询是否已存在记录
+        HealthWarningThreshold existingThreshold = healthDataMapper.selectHealthWarningThresholdByType(request.getIndicatorType());
+        
         HealthWarningThreshold threshold = new HealthWarningThreshold();
-        if (request.getId() != null) {
-            threshold.setId(request.getId());
+        if (existingThreshold != null) {
+            // 已存在，更新记录
+            threshold.setId(existingThreshold.getId());
+            threshold.setCreateTime(existingThreshold.getCreateTime());
+        } else {
+            // 不存在，新建记录
+            threshold.setCreateTime(LocalDateTime.now());
         }
         threshold.setIndicatorType(request.getIndicatorType());
         threshold.setMinValue(request.getMinValue());
         threshold.setMaxValue(request.getMaxValue());
         threshold.setIsActive(request.getIsActive());
-        threshold.setCreateTime(LocalDateTime.now());
         threshold.setUpdateTime(LocalDateTime.now());
 
-        if (request.getId() != null) {
+        if (existingThreshold != null) {
             healthDataMapper.updateHealthWarningThreshold(threshold);
         } else {
             healthDataMapper.insertHealthWarningThreshold(threshold);
@@ -221,13 +258,18 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         // 尝试从缓存获取
         String cacheKey = HEALTH_THRESHOLD_PREFIX + "list";
         if (redisEnabled) {
-            Object cachedValue = redisTemplate.opsForValue().get(cacheKey);
-            if (cachedValue != null && cachedValue instanceof List) {
-                @SuppressWarnings("unchecked")
-                List<HealthWarningThreshold> cachedThresholds = (List<HealthWarningThreshold>) cachedValue;
-                if (!CollectionUtils.isEmpty(cachedThresholds)) {
-                    return cachedThresholds;
+            try {
+                Object cachedValue = redisTemplate.opsForValue().get(cacheKey);
+                if (cachedValue != null && cachedValue instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<HealthWarningThreshold> cachedThresholds = (List<HealthWarningThreshold>) cachedValue;
+                    if (!CollectionUtils.isEmpty(cachedThresholds)) {
+                        log.debug("从Redis缓存获取健康预警阈值配置");
+                        return cachedThresholds;
+                    }
                 }
+            } catch (Exception e) {
+                log.warn("从Redis获取缓存失败，将从数据库查询: {}", e.getMessage());
             }
         }
 
@@ -240,7 +282,12 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
 
         // 缓存阈值配置
         if (redisEnabled) {
-            redisTemplate.opsForValue().set(cacheKey, thresholds, CACHE_DURATION, TimeUnit.MINUTES);
+            try {
+                redisTemplate.opsForValue().set(cacheKey, thresholds, CACHE_DURATION, TimeUnit.MINUTES);
+                log.debug("健康预警阈值配置已缓存到Redis");
+            } catch (Exception e) {
+                log.warn("缓存健康预警阈值配置到Redis失败: {}", e.getMessage());
+            }
         }
 
         return thresholds;
@@ -343,32 +390,40 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
 
         // 缓存预警信息
         if (redisEnabled) {
-            redisTemplate.opsForValue().set(
-                    HEALTH_WARNING_PREFIX + warning.getId(), 
-                    warning, 
-                    CACHE_DURATION, 
-                    TimeUnit.MINUTES
-            );
+            try {
+                redisTemplate.opsForValue().set(
+                        HEALTH_WARNING_PREFIX + warning.getId(), 
+                        warning, 
+                        CACHE_DURATION, 
+                        TimeUnit.MINUTES
+                );
+            } catch (Exception e) {
+                log.warn("缓存预警信息到Redis失败: {}", e.getMessage());
+            }
         }
     }
 
     // 辅助方法：缓存健康数据
     private void cacheHealthData(HealthData healthData) {
         if (redisEnabled) {
-            redisTemplate.opsForValue().set(
-                    HEALTH_DATA_PREFIX + healthData.getId(), 
-                    healthData, 
-                    CACHE_DURATION, 
-                    TimeUnit.MINUTES
-            );
+            try {
+                redisTemplate.opsForValue().set(
+                        HEALTH_DATA_PREFIX + healthData.getId(), 
+                        healthData, 
+                        CACHE_DURATION, 
+                        TimeUnit.MINUTES
+                );
 
-            // 更新用户最新健康数据缓存
-            redisTemplate.opsForValue().set(
-                    HEALTH_DATA_PREFIX + "latest:" + healthData.getUserId(), 
-                    healthData, 
-                    CACHE_DURATION, 
-                    TimeUnit.MINUTES
-            );
+                // 更新用户最新健康数据缓存
+                redisTemplate.opsForValue().set(
+                        HEALTH_DATA_PREFIX + "latest:" + healthData.getUserId(), 
+                        healthData, 
+                        CACHE_DURATION, 
+                        TimeUnit.MINUTES
+                );
+            } catch (Exception e) {
+                log.warn("缓存健康数据到Redis失败: {}", e.getMessage());
+            }
         }
     }
 
@@ -461,23 +516,25 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         long totalCount = healthDataMapper.selectTotalCount();
         long abnormalCount = healthDataMapper.selectAbnormalCount();
         long normalCount = totalCount - abnormalCount;
+        long todayCount = healthDataMapper.selectTodayCount();
         double coverageRate = totalCount > 0 ? (double) normalCount / totalCount * 100 : 0;
 
         statistics.put("totalCount", totalCount);
         statistics.put("abnormalCount", abnormalCount);
         statistics.put("normalCount", normalCount);
+        statistics.put("todayCount", todayCount);
         statistics.put("coverageRate", String.format("%.2f", coverageRate));
 
         return statistics;
     }
 
     @Override
-    public Map<String, Object> getHealthDataList(Integer page, Integer size, String name, String status) {
+    public Map<String, Object> getHealthDataList(Integer page, Integer size, String name, String status, String startDate, String endDate) {
         Map<String, Object> result = new HashMap<>();
 
         int offset = (page - 1) * size;
-        List<HealthData> healthDataList = healthDataMapper.selectHealthDataList(offset, size, name, status);
-        long total = healthDataMapper.selectHealthDataCount(name, status);
+        List<HealthData> healthDataList = healthDataMapper.selectHealthDataList(offset, size, name, status, startDate, endDate);
+        long total = healthDataMapper.selectHealthDataCount(name, status, startDate, endDate);
 
         result.put("list", healthDataList);
         result.put("total", total);
@@ -583,7 +640,85 @@ public class ElderlyHealthServiceImpl implements ElderlyHealthService {
         trend.put("systolicPressures", systolicPressures);
         trend.put("diastolicPressures", diastolicPressures);
         trend.put("bloodSugars", bloodSugars);
-
+        
         return trend;
+    }
+
+    @Override
+    public Map<String, Object> queryHealthData(Long elderlyId, Integer pageNum, Integer pageSize, String healthStatus, String startTime, String endTime) {
+        Map<String, Object> result = new HashMap<>();
+        
+        List<HealthData> healthDataList = healthDataMapper.selectHealthDataByUserId(
+            elderlyId, 
+            startTime != null ? LocalDateTime.parse(startTime) : null,
+            endTime != null ? LocalDateTime.parse(endTime) : null,
+            (pageNum - 1) * pageSize,
+            pageSize
+        );
+        
+        // 过滤健康状态
+        if (healthStatus != null && !healthStatus.isEmpty()) {
+            healthDataList = healthDataList.stream()
+                .filter(data -> healthStatus.equals(data.getHealthStatus()))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
+        // 计算总数
+        int total = healthDataMapper.countHealthDataByUserId(
+            elderlyId,
+            startTime != null ? LocalDateTime.parse(startTime) : null,
+            endTime != null ? LocalDateTime.parse(endTime) : null
+        );
+        
+        result.put("list", healthDataList);
+        result.put("total", total);
+        result.put("pageNum", pageNum);
+        result.put("pageSize", pageSize);
+        
+        return result;
+    }
+
+    @Override
+    public HealthData inputHealthData(Long elderlyId, HealthDataInputRequest request) {
+        HealthData healthData = new HealthData();
+        healthData.setUserId(elderlyId);
+        healthData.setHeartRate(request.getHeartRate());
+        healthData.setSystolicPressure(request.getBloodPressureSystolic());
+        healthData.setDiastolicPressure(request.getBloodPressureDiastolic());
+        healthData.setBloodSugar(request.getBloodSugar());
+        healthData.setTemperature(request.getBodyTemperature());
+        healthData.setWeight(request.getWeight());
+        healthData.setDescription(request.getNote());
+        healthData.setMonitorTime(LocalDateTime.now());
+        healthData.setCreateTime(LocalDateTime.now());
+        healthData.setUpdateTime(LocalDateTime.now());
+        
+        // 判定是否异常
+        boolean isAbnormal = judgeHealthDataAbnormal(healthData);
+        healthData.setHealthStatus(isAbnormal ? "abnormal" : "normal");
+        
+        // 保存健康数据
+        healthDataMapper.insertHealthData(healthData);
+        
+        // 如果异常，创建预警记录并推送通知
+        if (isAbnormal) {
+            createAndPushWarning(healthData);
+        }
+        
+        // 缓存健康数据
+        cacheHealthData(healthData);
+        
+        return healthData;
+    }
+
+    @Override
+    public void deleteHealthData(Long elderlyId, Long id) {
+        // 验证数据是否属于当前老人
+        HealthData healthData = healthDataMapper.selectHealthDataById(id);
+        if (healthData == null || !healthData.getUserId().equals(elderlyId)) {
+            throw new RuntimeException("无权删除此数据");
+        }
+        
+        healthDataMapper.deleteHealthDataById(id);
     }
 }

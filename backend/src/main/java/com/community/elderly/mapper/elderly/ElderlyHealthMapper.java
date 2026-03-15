@@ -35,13 +35,12 @@ public interface ElderlyHealthMapper extends BaseMapper<HealthData> {
     long selectTotalCount();
     long selectAbnormalCount();
     long selectMonthlyAbnormalCount();
+    long selectTodayCount();
 
     // 分页查询相关
-    @Select("SELECT h.* FROM health_data h LEFT JOIN sys_user u ON h.user_id = u.id WHERE (u.username LIKE CONCAT('%', #{name}, '%') OR #{name} IS NULL) ORDER BY h.monitor_time DESC LIMIT #{offset}, #{size}")
-    List<HealthData> selectHealthDataList(@Param("offset") Integer offset, @Param("size") Integer size, @Param("name") String name, @Param("status") String status);
+    List<HealthData> selectHealthDataList(@Param("offset") Integer offset, @Param("size") Integer size, @Param("name") String name, @Param("status") String status, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    @Select("SELECT COUNT(*) FROM health_data h LEFT JOIN sys_user u ON h.user_id = u.id WHERE (u.username LIKE CONCAT('%', #{name}, '%') OR #{name} IS NULL)")
-    long selectHealthDataCount(@Param("name") String name, @Param("status") String status);
+    long selectHealthDataCount(@Param("name") String name, @Param("status") String status, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
     // 趋势数据相关
     @Select("SELECT * FROM health_data WHERE user_id = #{userId} AND monitor_time >= #{startTime} AND monitor_time <= #{endTime} ORDER BY monitor_time ASC")

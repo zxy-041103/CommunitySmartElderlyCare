@@ -5,12 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.community.elderly.common.Result;
 import com.community.elderly.entity.ActivityCategory;
 import com.community.elderly.entity.Announcement;
+import com.community.elderly.entity.User;
 import com.community.elderly.service.admin.ActivityCategoryService;
 import com.community.elderly.service.admin.AnnouncementService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -72,7 +75,7 @@ public class AdminActivityController {
         IPage<Announcement> result = announcementService.page(pagination, 
             new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Announcement>()
                 .eq(Announcement::getAnnouncementType, "activity")
-                .orderByDesc(Announcement::getCreateTime)
+                .orderByDesc(Announcement::getId)
         );
         return Result.success(result);
     }
@@ -81,6 +84,17 @@ public class AdminActivityController {
     @ApiOperation(value = "创建活动", notes = "创建新的活动")
     public Result<Announcement> createActivity(@RequestBody Announcement activity) {
         activity.setAnnouncementType("activity");
+        
+        // 获取当前登录用户ID作为发布者
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User) {
+            User currentUser = (User) authentication.getPrincipal();
+            activity.setPublisherId(currentUser.getId());
+        } else {
+            // 如果无法获取当前用户，设置一个默认值（管理员ID为1）
+            activity.setPublisherId(1L);
+        }
+        
         announcementService.save(activity);
         return Result.success(activity);
     }

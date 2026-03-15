@@ -258,44 +258,10 @@ import {
   Refresh,
 } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { createServiceOrder, getServiceOrders, cancelServiceOrder } from "@/api/elderly/booking";
+import { createServiceOrder, getServiceOrders, cancelServiceOrder, getServiceTypes } from "@/api/elderly/booking";
 import { submitEvaluation } from "@/api/family/evaluate";
 
-const serviceTypes = [
-  {
-    id: 1,
-    name: "居家护理",
-    description: "专业护理人员上门服务",
-    price: "¥100/小时",
-    color: "#409EFF",
-    icon: "House",
-  },
-  {
-    id: 2,
-    name: "健康监测",
-    description: "定期上门健康检查",
-    price: "¥80/次",
-    color: "#67C23A",
-    icon: "User",
-  },
-  {
-    id: 3,
-    name: "接送服务",
-    description: "老人出行接送服务",
-    price: "¥50/次",
-    color: "#E6A23C",
-    icon: "BellFilled",
-  },
-  {
-    id: 4,
-    name: "紧急救援",
-    description: "24小时紧急救援服务",
-    price: "¥200/次",
-    color: "#F56C6C",
-    icon: "Phone",
-  },
-];
-
+const serviceTypes = ref([]);
 const selectedServiceId = ref(null);
 const selectedService = ref(null);
 const loading = ref(false);
@@ -341,9 +307,21 @@ const reviewRules = {
 const detailDialogVisible = ref(false);
 const currentBooking = ref(null);
 
-onMounted(() => {
-  fetchBookingRecords();
+onMounted(async () => {
+  await Promise.all([
+    fetchServiceTypes(),
+    fetchBookingRecords()
+  ]);
 });
+
+const fetchServiceTypes = async () => {
+  try {
+    const res = await getServiceTypes();
+    serviceTypes.value = res.data || [];
+  } catch (error) {
+    console.error("获取服务类型失败", error);
+  }
+};
 
 const fetchBookingRecords = async () => {
   loading.value = true;

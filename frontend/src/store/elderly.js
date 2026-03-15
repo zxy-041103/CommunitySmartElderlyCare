@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { getElderlyDetail } from "@/api/elderly/profile";
-import { getHealthList } from "@/api/elderly/health";
+import { queryHealthData } from "@/api/elderly/health";
 import { getServiceOrders } from "@/api/elderly/booking";
 
 export const useElderlyStore = defineStore("elderly", {
@@ -37,7 +37,7 @@ export const useElderlyStore = defineStore("elderly", {
     async getElderlyHealthData(elderlyId, params) {
       this.loading = true;
       try {
-        const res = await getHealthList({
+        const res = await queryHealthData({
           ...params,
           elderlyId,
         });

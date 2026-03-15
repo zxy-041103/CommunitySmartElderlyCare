@@ -20,17 +20,21 @@
               <el-icon><Monitor /></el-icon>
               <span>健康报告</span>
             </el-menu-item>
+            <el-menu-item index="/elderly/health-monitor">
+              <el-icon><Monitor /></el-icon>
+              <span>健康监测</span>
+            </el-menu-item>
             <el-menu-item index="/elderly/service-booking">
               <el-icon><Service /></el-icon>
               <span>服务预约</span>
             </el-menu-item>
-            <el-menu-item index="/health">
-              <el-icon><Monitor /></el-icon>
-              <span>健康监测</span>
-            </el-menu-item>
-            <el-menu-item index="/emergency">
+            <el-menu-item index="/elderly/emergency">
               <el-icon><Warning /></el-icon>
               <span>紧急求助</span>
+            </el-menu-item>
+            <el-menu-item index="/elderly/family-contact">
+              <el-icon><Phone /></el-icon>
+              <span>联系家属</span>
             </el-menu-item>
           </template>
 
@@ -299,6 +303,7 @@ import {
   Check,
   Picture,
   Link,
+  Phone,
 } from "@element-plus/icons-vue";
 import { getUserInfo, updateUserInfo } from "@/api/user";
 import { onMounted } from "vue";

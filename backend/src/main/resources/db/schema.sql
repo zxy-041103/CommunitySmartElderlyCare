@@ -1,3 +1,23 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : local
+Source Server Version : 80039
+Source Host           : localhost:3306
+Source Database       : smart_elderly_care
+
+Target Server Type    : MYSQL
+Target Server Version : 80039
+File Encoding         : 65001
+
+Date: 2026-03-16 00:20:38
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for activity_category
+-- ----------------------------
 DROP TABLE IF EXISTS `activity_category`;
 CREATE TABLE `activity_category` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '分类ID',
@@ -12,6 +32,30 @@ CREATE TABLE `activity_category` (
   KEY `idx_is_enabled` (`is_enabled`),
   KEY `idx_sort` (`sort`)
 ) ENGINE=InnoDB AUTO_INCREMENT=137 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='活动分类表';
+
+-- ----------------------------
+-- Table structure for chat_message
+-- ----------------------------
+DROP TABLE IF EXISTS `chat_message`;
+CREATE TABLE `chat_message` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+  `sender_id` bigint NOT NULL COMMENT '发送者ID',
+  `sender_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '发送者类型：elderly-老人，family-家属',
+  `receiver_id` bigint NOT NULL COMMENT '接收者ID',
+  `receiver_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '接收者类型：elderly-老人，family-家属',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '消息内容',
+  `message_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'text' COMMENT '消息类型：text-文字，voice-语音',
+  `is_read` tinyint unsigned DEFAULT '0' COMMENT '是否已读：1-是，0-否',
+  `read_time` datetime DEFAULT NULL COMMENT '阅读时间',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `is_deleted` tinyint unsigned DEFAULT '0' COMMENT '是否删除：1-是，0-否',
+  PRIMARY KEY (`id`),
+  KEY `idx_sender_id` (`sender_id`),
+  KEY `idx_receiver_id` (`receiver_id`),
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_is_read` (`is_read`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='聊天记录表';
 
 -- ----------------------------
 -- Table structure for emergency_help
@@ -43,7 +87,7 @@ CREATE TABLE `emergency_help` (
   KEY `idx_is_deleted` (`is_deleted`),
   CONSTRAINT `fk_emergency_handler` FOREIGN KEY (`handler_id`) REFERENCES `sys_user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_emergency_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='紧急求助表';
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='紧急求助表';
 
 -- ----------------------------
 -- Table structure for family_elderly_relation
@@ -89,8 +133,8 @@ CREATE TABLE `health_data` (
   `height` decimal(5,1) DEFAULT NULL COMMENT '身高（cm）',
   `temperature` decimal(4,1) DEFAULT NULL COMMENT '体温（℃）',
   `oxygen_saturation` decimal(4,1) DEFAULT NULL COMMENT '血氧饱和度（%）',
-  `health_status` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT 'normal' COMMENT '健康状态：normal-正常，abnormal-异常',
-  `description` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '健康描述',
+  `health_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'normal' COMMENT '健康状态：normal-正常，abnormal-异常',
+  `description` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '健康描述',
   `monitor_time` datetime NOT NULL COMMENT '监测时间',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -102,29 +146,7 @@ CREATE TABLE `health_data` (
   KEY `idx_create_time` (`create_time`),
   KEY `idx_is_deleted` (`is_deleted`),
   CONSTRAINT `fk_health_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=73 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='健康数据表';
-
--- ----------------------------
--- Table structure for health_warning
--- ----------------------------
-DROP TABLE IF EXISTS `health_warning`;
-CREATE TABLE `health_warning` (
-  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '预警ID',
-  `health_data_id` bigint NOT NULL COMMENT '健康数据ID',
-  `user_id` bigint NOT NULL COMMENT '用户ID',
-  `warning_type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '预警类型：bloodPressure, heartRate, bloodSugar, temperature',
-  `warning_level` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '预警级别：low, medium, high',
-  `warning_message` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '预警信息',
-  `is_notified` tinyint unsigned NOT NULL DEFAULT '0' COMMENT '是否已通知：0-未通知，1-已通知',
-  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`),
-  KEY `idx_user_id` (`user_id`),
-  KEY `idx_health_data_id` (`health_data_id`),
-  KEY `idx_create_time` (`create_time`),
-  CONSTRAINT `fk_warning_health_data` FOREIGN KEY (`health_data_id`) REFERENCES `health_data` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_warning_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='健康预警表';
+) ENGINE=InnoDB AUTO_INCREMENT=177 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='健康数据表';
 
 -- ----------------------------
 -- Table structure for health_warning_threshold
@@ -141,6 +163,24 @@ CREATE TABLE `health_warning_threshold` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_indicator_type` (`indicator_type`)
 ) ENGINE=InnoDB AUTO_INCREMENT=232 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='健康预警阈值配置表';
+
+-- ----------------------------
+-- Table structure for quick_phrase_template
+-- ----------------------------
+DROP TABLE IF EXISTS `quick_phrase_template`;
+CREATE TABLE `quick_phrase_template` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '模板ID',
+  `category` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '分类：daily-日常报平安，sick-身体不适，need-生活需求，emotion-情感关怀，emergency-紧急情况',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '话术内容',
+  `sort` int unsigned DEFAULT '0' COMMENT '排序',
+  `is_enabled` tinyint unsigned DEFAULT '1' COMMENT '是否启用：1-是，0-否',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_category` (`category`),
+  KEY `idx_sort` (`sort`),
+  KEY `idx_is_enabled` (`is_enabled`)
+) ENGINE=InnoDB AUTO_INCREMENT=16 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='快捷话术模板表';
 
 -- ----------------------------
 -- Table structure for service_evaluation
@@ -164,7 +204,7 @@ CREATE TABLE `service_evaluation` (
   CONSTRAINT `fk_evaluation_caregiver` FOREIGN KEY (`caregiver_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_evaluation_order` FOREIGN KEY (`order_id`) REFERENCES `service_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_evaluation_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务评价表';
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务评价表';
 
 -- ----------------------------
 -- Table structure for service_order
@@ -197,7 +237,7 @@ CREATE TABLE `service_order` (
   KEY `idx_is_deleted` (`is_deleted`),
   CONSTRAINT `fk_order_caregiver` FOREIGN KEY (`caregiver_id`) REFERENCES `sys_user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_order_user` FOREIGN KEY (`user_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务预约表';
+) ENGINE=InnoDB AUTO_INCREMENT=41 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务预约表';
 
 -- ----------------------------
 -- Table structure for service_verification
@@ -222,7 +262,7 @@ CREATE TABLE `service_verification` (
   KEY `idx_create_time` (`create_time`),
   CONSTRAINT `fk_verification_order` FOREIGN KEY (`order_id`) REFERENCES `service_order` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_verification_verifier` FOREIGN KEY (`verifier_id`) REFERENCES `sys_user` (`id`) ON DELETE SET NULL ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务核销表';
+) ENGINE=InnoDB AUTO_INCREMENT=27 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='服务核销表';
 
 -- ----------------------------
 -- Table structure for sys_announcement
@@ -254,7 +294,7 @@ CREATE TABLE `sys_announcement` (
   KEY `fk_announcement_activity_category` (`activity_category_id`),
   CONSTRAINT `fk_announcement_activity_category` FOREIGN KEY (`activity_category_id`) REFERENCES `activity_category` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
   CONSTRAINT `fk_announcement_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `sys_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=53 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
+) ENGINE=InnoDB AUTO_INCREMENT=54 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='公告表';
 
 -- ----------------------------
 -- Table structure for sys_backup_config
@@ -280,16 +320,16 @@ CREATE TABLE `sys_backup_config` (
 DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
-  `username` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
-  `password` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码（BCrypt加密）',
-  `real_name` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '真实姓名',
-  `id_card` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证号（AES加密）',
-  `phone` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '手机号（AES加密）',
-  `role_type` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色类型：elderly-老人，family-家属，caregiver-护工，admin-管理员',
+  `username` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '用户名',
+  `password` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '密码（BCrypt加密）',
+  `real_name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '真实姓名',
+  `id_card` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '身份证号（AES加密）',
+  `phone` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '手机号（AES加密）',
+  `role_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '角色类型：elderly-老人，family-家属，caregiver-护工，admin-管理员',
   `gender` tinyint unsigned DEFAULT '1' COMMENT '性别：1-男，0-女',
   `age` int unsigned DEFAULT '0' COMMENT '年龄',
-  `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '住址',
-  `avatar` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像URL',
+  `address` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '住址',
+  `avatar` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '头像URL',
   `is_enabled` tinyint unsigned DEFAULT '1' COMMENT '是否启用：1-是，0-否',
   `is_deleted` tinyint unsigned DEFAULT '0' COMMENT '是否删除：1-是，0-否',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
