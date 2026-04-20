@@ -39,7 +39,7 @@
         <el-form-item label="角色"><el-select v-model="form.role" style="width:100%"><el-option label="用户" value="USER" /><el-option label="护工" value="CAREGIVER" /><el-option label="社区服务" value="COMMUNITY" /><el-option label="管理员" value="ADMIN" /></el-select></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="form.email" /></el-form-item>
-        <el-form-item label="性别"><el-radio-group v-model="form.gender"><el-radio label="男" /><el-radio label="女" /></el-radio-group></el-form-item>
+        <el-form-item label="性别"><el-radio-group v-model="form.gender"><el-radio value="男" /><el-radio value="女" /></el-radio-group></el-form-item>
         <el-form-item label="年龄"><el-input-number v-model="form.age" :min="1" :max="150" /></el-form-item>
         <el-form-item label="地址"><el-input v-model="form.address" /></el-form-item>
         <el-form-item label="状态"><el-switch v-model="form.status" :active-value="1" :inactive-value="0" /></el-form-item>
@@ -59,7 +59,7 @@ const tableData = ref([]); const total = ref(0); const dialogVisible = ref(false
 const form = ref({})
 
 const roleLabel = (r) => ({ ADMIN: '管理员', USER: '用户', CAREGIVER: '护工', COMMUNITY: '社区服务' }[r] || r)
-const roleType = (r) => ({ ADMIN: 'danger', USER: '', CAREGIVER: 'warning', COMMUNITY: 'success' }[r] || '')
+const roleType = (r) => ({ ADMIN: 'danger', USER: 'info', CAREGIVER: 'warning', COMMUNITY: 'success' }[r] || 'info')
 
 const loadData = async () => {
   const res = await userPage(query.value)

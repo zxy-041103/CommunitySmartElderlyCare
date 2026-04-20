@@ -47,13 +47,30 @@ const tableData = ref([]); const total = ref(0); const processDialogVisible = re
 const processForm = ref({ id: null, status: 'PROCESSED', processNote: '' })
 
 const levelLabel = (l) => ({ INFO: '提示', WARNING: '警告', DANGER: '危险' }[l] || l)
-const levelType = (l) => ({ INFO: 'info', WARNING: 'warning', DANGER: 'danger' }[l] || '')
-const statusLabel = (s) => ({ PENDING: '待处理', PROCESSED: '已处理', IGNORED: '已忽略' }[s] || s)
-const statusType = (s) => ({ PENDING: 'warning', PROCESSED: 'success', IGNORED: 'info' }[s] || '')
+const levelType = (l) => ({ INFO: 'info', WARNING: 'warning', DANGER: 'danger' }[l] || 'info')
+const statusType = (s) => ({ PENDING: 'warning', PROCESSED: 'success', IGNORED: 'info' }[s] || 'info')
 
-const loadData = async () => { const res = await healthAlertPage(query.value); tableData.value = res.data.records; total.value = res.data.total }
-const openProcess = (row) => { processForm.value = { id: row.id, status: 'PROCESSED', processNote: '' }; processDialogVisible.value = true }
-const submitProcess = async () => { await healthAlertProcess(processForm.value.id, processForm.value); ElMessage.success('处理成功'); processDialogVisible.value = false; loadData() }
-const del = (id) => { ElMessageBox.confirm('确认删除？').then(async () => { await healthAlertDelete(id); ElMessage.success('删除成功'); loadData() }) }
+const loadData = async () => {
+  const res = await healthAlertPage(query.value)
+  tableData.value = res.data.records
+  total.value = res.data.total
+}
+const openProcess = (row) => {
+  processForm.value = { id: row.id, status: 'PROCESSED', processNote: '' }
+  processDialogVisible.value = true
+}
+const submitProcess = async () => {
+  await healthAlertProcess(processForm.value.id, processForm.value)
+  ElMessage.success('处理成功')
+  processDialogVisible.value = false
+  loadData()
+}
+const del = (id) => {
+  ElMessageBox.confirm('确认删除？').then(async () => {
+    await healthAlertDelete(id)
+    ElMessage.success('删除成功')
+    loadData()
+  })
+}
 onMounted(loadData)
 </script>

@@ -2,7 +2,7 @@
   <div class="page-card">
     <h3 class="page-title">我的预约</h3>
     <el-radio-group v-model="statusFilter" @change="loadData" style="margin-bottom:16px;">
-      <el-radio-button label="">全部</el-radio-button><el-radio-button label="PENDING">待确认</el-radio-button><el-radio-button label="CONFIRMED">已确认</el-radio-button><el-radio-button label="COMPLETED">已完成</el-radio-button><el-radio-button label="CANCELLED">已取消</el-radio-button>
+      <el-radio-button value="">全部</el-radio-button><el-radio-button value="PENDING">待确认</el-radio-button><el-radio-button value="CONFIRMED">已确认</el-radio-button><el-radio-button value="COMPLETED">已完成</el-radio-button><el-radio-button value="CANCELLED">已取消</el-radio-button>
     </el-radio-group>
     <el-table :data="appointments" border stripe>
       <el-table-column prop="serviceItemName" label="服务项目" />

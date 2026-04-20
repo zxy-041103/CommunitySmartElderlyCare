@@ -3,7 +3,7 @@
     <div class="page-card">
       <h3 class="page-title">我的健康数据</h3>
       <el-radio-group v-model="days" @change="loadData" style="margin-bottom:16px;">
-        <el-radio-button :label="7">近7天</el-radio-button><el-radio-button :label="14">近14天</el-radio-button><el-radio-button :label="30">近30天</el-radio-button>
+        <el-radio-button :value="7">近7天</el-radio-button><el-radio-button :value="14">近14天</el-radio-button><el-radio-button :value="30">近30天</el-radio-button>
       </el-radio-group>
       <el-row :gutter="20">
         <el-col :span="12"><div ref="bpChartRef" style="height:300px;"></div></el-col>

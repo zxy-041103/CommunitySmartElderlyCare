@@ -12,7 +12,7 @@
         <el-form-item label="姓名"><el-input v-model="form.name" /></el-form-item>
         <el-form-item label="手机号"><el-input v-model="form.phone" /></el-form-item>
         <el-form-item label="邮箱"><el-input v-model="form.email" /></el-form-item>
-        <el-form-item label="性别"><el-radio-group v-model="form.gender"><el-radio label="男" /><el-radio label="女" /></el-radio-group></el-form-item>
+        <el-form-item label="性别"><el-radio-group v-model="form.gender"><el-radio value="男" /><el-radio value="女" /></el-radio-group></el-form-item>
         <el-form-item label="年龄"><el-input-number v-model="form.age" :min="1" :max="150" /></el-form-item>
         <el-form-item label="地址"><el-input v-model="form.address" /></el-form-item>
         <el-form-item><el-button type="primary" @click="saveProfile">保存信息</el-button></el-form-item>
@@ -31,7 +31,7 @@
       <el-form label-width="100px" style="max-width:400px;">
         <el-form-item label="字体大小">
           <el-radio-group :model-value="fontSize" @change="changeFontSize">
-            <el-radio-button label="normal">标准</el-radio-button><el-radio-button label="large">大号</el-radio-button><el-radio-button label="xlarge">超大号</el-radio-button>
+            <el-radio-button value="normal">标准</el-radio-button><el-radio-button value="large">大号</el-radio-button><el-radio-button value="xlarge">超大号</el-radio-button>
           </el-radio-group>
         </el-form-item>
       </el-form>
