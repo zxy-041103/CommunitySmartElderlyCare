@@ -1,30 +1,69 @@
 <template>
   <div class="login-page">
-    <div style="position:absolute;top:40px;left:50%;transform:translateX(-50%);text-align:center;color:rgba(255,255,255,0.9);">
-      <h1 style="font-size:32px;margin-bottom:8px;">🏠 社区智慧养老监护管理平台</h1>
-      <p style="font-size:14px;color:rgba(255,255,255,0.7);">Smart Community Elderly Care Monitoring Platform</p>
+    <!-- 背景遮罩层 -->
+    <div class="login-overlay"></div>
+
+    <!-- 顶部标题 -->
+    <div class="login-header">
+      <h1 class="main-title">🏠 社区智慧养老监护管理平台</h1>
+      <p class="sub-title">Smart Community Elderly Care Monitoring Platform</p>
     </div>
+
+    <!-- 登录卡片 -->
     <div class="login-card">
-      <div class="login-title">
-        <h1>用户登录</h1>
-        <p>欢迎使用社区智慧养老监护管理平台</p>
-      </div>
-      <el-form :model="loginForm" :rules="rules" ref="formRef" label-width="0">
-        <el-form-item prop="username">
-          <el-input v-model="loginForm.username" placeholder="请输入用户名" size="large" prefix-icon="User" />
-        </el-form-item>
-        <el-form-item prop="password">
-          <el-input v-model="loginForm.password" placeholder="请输入密码" type="password" show-password size="large" prefix-icon="Lock" @keyup.enter="handleLogin" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleLogin" :loading="loading" size="large" style="width:100%;font-size:16px;height:44px;">登 录</el-button>
-        </el-form-item>
-      </el-form>
-      <div style="display:flex;justify-content:center;gap:16px;margin-top:16px;">
-        <el-tag @click="fillAccount('admin','123456')" style="cursor:pointer">管理员</el-tag>
-        <el-tag @click="fillAccount('test1','123456')" type="success" style="cursor:pointer">测试用户</el-tag>
-        <el-tag @click="fillAccount('test2','123456')" type="warning" style="cursor:pointer">护工</el-tag>
-        <el-tag @click="fillAccount('test3','123456')" type="danger" style="cursor:pointer">社区服务</el-tag>
+      <div class="login-card-inner">
+        <div class="login-title">
+          <h2>用户登录</h2>
+          <p>欢迎使用社区智慧养老监护管理平台</p>
+        </div>
+
+        <el-form :model="loginForm" :rules="rules" ref="formRef" label-width="0">
+          <el-form-item prop="username">
+            <el-input
+              v-model="loginForm.username"
+              placeholder="请输入用户名"
+              size="large"
+              prefix-icon="User"
+              class="custom-input"
+            />
+          </el-form-item>
+
+          <el-form-item prop="password">
+            <el-input
+              v-model="loginForm.password"
+              placeholder="请输入密码"
+              type="password"
+              show-password
+              size="large"
+              prefix-icon="Lock"
+              class="custom-input"
+              @keyup.enter="handleLogin"
+            />
+          </el-form-item>
+
+          <el-form-item>
+            <el-button
+              type="primary"
+              @click="handleLogin"
+              :loading="loading"
+              size="large"
+              class="login-button"
+            >
+              登 录
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <!-- 角色快速登录 -->
+        <div class="quick-login">
+          <p class="quick-login-title">快速登录</p>
+          <div class="role-buttons">
+            <span class="role-btn" @click="fillAccount('admin', '123456')">管理员</span>
+            <span class="role-btn" @click="fillAccount('test1', '123456')">测试用户</span>
+            <span class="role-btn" @click="fillAccount('test2', '123456')">护工</span>
+            <span class="role-btn" @click="fillAccount('test3', '123456')">社区服务</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

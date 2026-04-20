@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
@@ -14,6 +15,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true
       }
+    }
+  },
+  resolve: {
+    alias: {
+      // @ 指向 src 目录
+      '@': path.resolve(__dirname, './src')
     }
   }
 })
