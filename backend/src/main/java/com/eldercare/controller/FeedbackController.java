@@ -41,7 +41,7 @@ public class FeedbackController {
         LambdaQueryWrapper<Feedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null && !status.isEmpty(), Feedback::getStatus, status);
         wrapper.eq(type != null && !type.isEmpty(), Feedback::getType, type);
-        wrapper.orderByDesc(Feedback::getCreateTime);
+        wrapper.orderByAsc(Feedback::getId);
         Page<Feedback> page = feedbackMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -52,7 +52,7 @@ public class FeedbackController {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<Feedback> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Feedback::getUserId, userId);
-        wrapper.orderByDesc(Feedback::getCreateTime);
+        wrapper.orderByAsc(Feedback::getId);
         java.util.List<Feedback> list = feedbackMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

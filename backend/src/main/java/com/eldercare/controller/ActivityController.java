@@ -29,19 +29,20 @@ public class ActivityController {
     private void fillOrganizerName(Activity activity) {
         if (activity.getOrganizerId() != null) {
             User u = userMapper.selectById(activity.getOrganizerId());
-            if (u != null) activity.setOrganizerName(u.getName());
+            if (u != null)
+                activity.setOrganizerName(u.getName());
         }
     }
 
     @GetMapping("/page")
     public Result<?> page(@RequestParam(defaultValue = "1") Integer pageNum,
-                          @RequestParam(defaultValue = "10") Integer pageSize,
-                          @RequestParam(required = false) String status,
-                          @RequestParam(required = false) String title) {
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String title) {
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null && !status.isEmpty(), Activity::getStatus, status);
         wrapper.like(title != null && !title.isEmpty(), Activity::getTitle, title);
-        wrapper.orderByDesc(Activity::getCreateTime);
+        wrapper.orderByAsc(Activity::getId);
         Page<Activity> page = activityMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillOrganizerName);
         return Result.success(page);
@@ -49,10 +50,10 @@ public class ActivityController {
 
     @GetMapping("/published")
     public Result<?> published(@RequestParam(defaultValue = "1") Integer pageNum,
-                                @RequestParam(defaultValue = "10") Integer pageSize) {
+            @RequestParam(defaultValue = "10") Integer pageSize) {
         LambdaQueryWrapper<Activity> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Activity::getStatus, "UPCOMING", "ONGOING");
-        wrapper.orderByAsc(Activity::getStartTime);
+        wrapper.orderByAsc(Activity::getId);
         Page<Activity> page = activityMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillOrganizerName);
         return Result.success(page);
@@ -92,7 +93,8 @@ public class ActivityController {
     @DeleteMapping("/{id}")
     public Result<?> delete(@PathVariable Long id) {
         activityMapper.deleteById(id);
-        registrationMapper.delete(new LambdaQueryWrapper<ActivityRegistration>().eq(ActivityRegistration::getActivityId, id));
+        registrationMapper
+                .delete(new LambdaQueryWrapper<ActivityRegistration>().eq(ActivityRegistration::getActivityId, id));
         return Result.success("删除成功");
     }
 
@@ -103,7 +105,8 @@ public class ActivityController {
                 .eq(ActivityRegistration::getActivityId, id)
                 .eq(ActivityRegistration::getUserId, userId)
                 .ne(ActivityRegistration::getStatus, "CANCELLED"));
-        if (count > 0) return Result.error("您已报名该活动");
+        if (count > 0)
+            return Result.error("您已报名该活动");
         Activity activity = activityMapper.selectById(id);
         if (activity.getCurrentParticipants() >= activity.getMaxParticipants()) {
             return Result.error("报名人数已满");
@@ -125,7 +128,8 @@ public class ActivityController {
                 .eq(ActivityRegistration::getActivityId, id)
                 .eq(ActivityRegistration::getUserId, userId)
                 .eq(ActivityRegistration::getStatus, "REGISTERED"));
-        if (reg == null) return Result.error("未找到报名记录");
+        if (reg == null)
+            return Result.error("未找到报名记录");
         reg.setStatus("CANCELLED");
         registrationMapper.updateById(reg);
         Activity activity = activityMapper.selectById(id);
@@ -138,12 +142,15 @@ public class ActivityController {
     public Result<?> registrations(@PathVariable Long activityId) {
         LambdaQueryWrapper<ActivityRegistration> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ActivityRegistration::getActivityId, activityId);
+        wrapper.orderByAsc(ActivityRegistration::getId);
         List<ActivityRegistration> list = registrationMapper.selectList(wrapper);
         list.forEach(r -> {
             User u = userMapper.selectById(r.getUserId());
-            if (u != null) r.setUserName(u.getName());
+            if (u != null)
+                r.setUserName(u.getName());
             Activity a = activityMapper.selectById(r.getActivityId());
-            if (a != null) r.setActivityTitle(a.getTitle());
+            if (a != null)
+                r.setActivityTitle(a.getTitle());
         });
         return Result.success(list);
     }
@@ -153,11 +160,12 @@ public class ActivityController {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<ActivityRegistration> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ActivityRegistration::getUserId, userId);
-        wrapper.orderByDesc(ActivityRegistration::getCreateTime);
+        wrapper.orderByAsc(ActivityRegistration::getId);
         List<ActivityRegistration> list = registrationMapper.selectList(wrapper);
         list.forEach(r -> {
             Activity a = activityMapper.selectById(r.getActivityId());
-            if (a != null) r.setActivityTitle(a.getTitle());
+            if (a != null)
+                r.setActivityTitle(a.getTitle());
         });
         return Result.success(list);
     }

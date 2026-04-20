@@ -40,7 +40,7 @@ public class ServiceRecordController {
         LambdaQueryWrapper<ServiceRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(caregiverId != null, ServiceRecord::getCaregiverId, caregiverId);
         wrapper.eq(elderlyId != null, ServiceRecord::getElderlyId, elderlyId);
-        wrapper.orderByDesc(ServiceRecord::getServiceTime);
+        wrapper.orderByAsc(ServiceRecord::getId);
         Page<ServiceRecord> page = serviceRecordMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -51,7 +51,7 @@ public class ServiceRecordController {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<ServiceRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ServiceRecord::getCaregiverId, userId);
-        wrapper.orderByDesc(ServiceRecord::getServiceTime);
+        wrapper.orderByAsc(ServiceRecord::getId);
         java.util.List<ServiceRecord> list = serviceRecordMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

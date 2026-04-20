@@ -26,21 +26,22 @@ public class WorkScheduleController {
     private void fillCaregiverName(WorkSchedule ws) {
         if (ws.getCaregiverId() != null) {
             User u = userMapper.selectById(ws.getCaregiverId());
-            if (u != null) ws.setCaregiverName(u.getName());
+            if (u != null)
+                ws.setCaregiverName(u.getName());
         }
     }
 
     @GetMapping("/page")
     public Result<?> page(@RequestParam(defaultValue = "1") Integer pageNum,
-                          @RequestParam(defaultValue = "10") Integer pageSize,
-                          @RequestParam(required = false) Long caregiverId,
-                          @RequestParam(required = false) String workDate) {
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Long caregiverId,
+            @RequestParam(required = false) String workDate) {
         LambdaQueryWrapper<WorkSchedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(caregiverId != null, WorkSchedule::getCaregiverId, caregiverId);
         if (workDate != null && !workDate.isEmpty()) {
             wrapper.eq(WorkSchedule::getWorkDate, LocalDate.parse(workDate));
         }
-        wrapper.orderByDesc(WorkSchedule::getWorkDate);
+        wrapper.orderByAsc(WorkSchedule::getId);
         Page<WorkSchedule> page = workScheduleMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillCaregiverName);
         return Result.success(page);
@@ -48,8 +49,8 @@ public class WorkScheduleController {
 
     @GetMapping("/my")
     public Result<?> mySchedule(HttpServletRequest request,
-                                 @RequestParam(required = false) String startDate,
-                                 @RequestParam(required = false) String endDate) {
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<WorkSchedule> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(WorkSchedule::getCaregiverId, userId);
@@ -59,7 +60,7 @@ public class WorkScheduleController {
         if (endDate != null && !endDate.isEmpty()) {
             wrapper.le(WorkSchedule::getWorkDate, LocalDate.parse(endDate));
         }
-        wrapper.orderByAsc(WorkSchedule::getWorkDate).orderByAsc(WorkSchedule::getShiftType);
+        wrapper.orderByAsc(WorkSchedule::getId);
         List<WorkSchedule> list = workScheduleMapper.selectList(wrapper);
         list.forEach(this::fillCaregiverName);
         return Result.success(list);

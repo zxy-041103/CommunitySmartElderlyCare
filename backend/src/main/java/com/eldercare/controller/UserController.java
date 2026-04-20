@@ -25,7 +25,7 @@ public class UserController {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(name != null && !name.isEmpty(), User::getName, name);
         wrapper.eq(role != null && !role.isEmpty(), User::getRole, role);
-        wrapper.orderByDesc(User::getCreateTime);
+        wrapper.orderByAsc(User::getId);
         Page<User> page = userMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(u -> u.setPassword(null));
         return Result.success(page);
@@ -36,7 +36,7 @@ public class UserController {
         LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(role != null && !role.isEmpty(), User::getRole, role);
         wrapper.eq(User::getStatus, 1);
-        wrapper.orderByDesc(User::getCreateTime);
+        wrapper.orderByAsc(User::getId);
         java.util.List<User> list = userMapper.selectList(wrapper);
         list.forEach(u -> u.setPassword(null));
         return Result.success(list);

@@ -36,7 +36,7 @@ public class ServiceItemController {
         LambdaQueryWrapper<ServiceItem> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(name != null && !name.isEmpty(), ServiceItem::getName, name);
         wrapper.eq(categoryId != null, ServiceItem::getCategoryId, categoryId);
-        wrapper.orderByDesc(ServiceItem::getCreateTime);
+        wrapper.orderByAsc(ServiceItem::getId);
         Page<ServiceItem> page = serviceItemMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillCategoryName);
         return Result.success(page);
@@ -47,7 +47,7 @@ public class ServiceItemController {
         LambdaQueryWrapper<ServiceItem> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ServiceItem::getStatus, 1);
         wrapper.eq(categoryId != null, ServiceItem::getCategoryId, categoryId);
-        wrapper.orderByDesc(ServiceItem::getCreateTime);
+        wrapper.orderByAsc(ServiceItem::getId);
         List<ServiceItem> list = serviceItemMapper.selectList(wrapper);
         list.forEach(this::fillCategoryName);
         return Result.success(list);

@@ -50,7 +50,7 @@ public class ServiceAppointmentController {
         wrapper.eq(status != null && !status.isEmpty(), ServiceAppointment::getStatus, status);
         wrapper.eq(elderlyId != null, ServiceAppointment::getElderlyId, elderlyId);
         wrapper.eq(caregiverId != null, ServiceAppointment::getCaregiverId, caregiverId);
-        wrapper.orderByDesc(ServiceAppointment::getCreateTime);
+        wrapper.orderByAsc(ServiceAppointment::getId);
         Page<ServiceAppointment> page = appointmentMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -68,7 +68,7 @@ public class ServiceAppointmentController {
             wrapper.eq(ServiceAppointment::getElderlyId, userId);
         }
         wrapper.eq(status != null && !status.isEmpty(), ServiceAppointment::getStatus, status);
-        wrapper.orderByDesc(ServiceAppointment::getCreateTime);
+        wrapper.orderByAsc(ServiceAppointment::getId);
         java.util.List<ServiceAppointment> list = appointmentMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

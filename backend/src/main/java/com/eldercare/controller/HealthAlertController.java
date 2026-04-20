@@ -42,7 +42,7 @@ public class HealthAlertController {
         LambdaQueryWrapper<HealthAlert> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null && !status.isEmpty(), HealthAlert::getStatus, status);
         wrapper.eq(alertLevel != null && !alertLevel.isEmpty(), HealthAlert::getAlertLevel, alertLevel);
-        wrapper.orderByDesc(HealthAlert::getCreateTime);
+        wrapper.orderByAsc(HealthAlert::getId);
         Page<HealthAlert> page = healthAlertMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -53,7 +53,7 @@ public class HealthAlertController {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<HealthAlert> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(HealthAlert::getElderlyId, userId);
-        wrapper.orderByDesc(HealthAlert::getCreateTime);
+        wrapper.orderByAsc(HealthAlert::getId);
         List<HealthAlert> list = healthAlertMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

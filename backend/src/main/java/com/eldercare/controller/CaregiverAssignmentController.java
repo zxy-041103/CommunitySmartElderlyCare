@@ -43,7 +43,7 @@ public class CaregiverAssignmentController {
     public Result<?> page(@RequestParam(defaultValue = "1") Integer pageNum,
                           @RequestParam(defaultValue = "10") Integer pageSize) {
         LambdaQueryWrapper<CaregiverAssignment> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(CaregiverAssignment::getCreateTime);
+        wrapper.orderByAsc(CaregiverAssignment::getId);
         Page<CaregiverAssignment> page = assignmentMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -55,7 +55,7 @@ public class CaregiverAssignmentController {
         LambdaQueryWrapper<CaregiverAssignment> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CaregiverAssignment::getCaregiverId, userId);
         wrapper.eq(CaregiverAssignment::getStatus, 1);
-        wrapper.orderByDesc(CaregiverAssignment::getCreateTime);
+        wrapper.orderByAsc(CaregiverAssignment::getId);
         List<CaregiverAssignment> list = assignmentMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

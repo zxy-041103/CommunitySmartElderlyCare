@@ -42,7 +42,7 @@ public class EmergencyRecordController {
                           @RequestParam(required = false) String status) {
         LambdaQueryWrapper<EmergencyRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(status != null && !status.isEmpty(), EmergencyRecord::getStatus, status);
-        wrapper.orderByDesc(EmergencyRecord::getCreateTime);
+        wrapper.orderByAsc(EmergencyRecord::getId);
         Page<EmergencyRecord> page = emergencyRecordMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillNames);
         return Result.success(page);
@@ -53,7 +53,7 @@ public class EmergencyRecordController {
         Long userId = (Long) request.getAttribute("userId");
         LambdaQueryWrapper<EmergencyRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EmergencyRecord::getElderlyId, userId);
-        wrapper.orderByDesc(EmergencyRecord::getCreateTime);
+        wrapper.orderByAsc(EmergencyRecord::getId);
         java.util.List<EmergencyRecord> list = emergencyRecordMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);
@@ -63,7 +63,7 @@ public class EmergencyRecordController {
     public Result<?> pending() {
         LambdaQueryWrapper<EmergencyRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(EmergencyRecord::getStatus, "PENDING", "PROCESSING");
-        wrapper.orderByDesc(EmergencyRecord::getCreateTime);
+        wrapper.orderByAsc(EmergencyRecord::getId);
         java.util.List<EmergencyRecord> list = emergencyRecordMapper.selectList(wrapper);
         list.forEach(this::fillNames);
         return Result.success(list);

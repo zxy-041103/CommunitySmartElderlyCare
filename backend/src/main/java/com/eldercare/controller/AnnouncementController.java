@@ -36,7 +36,7 @@ public class AnnouncementController {
         LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(type != null && !type.isEmpty(), Announcement::getType, type);
         wrapper.like(title != null && !title.isEmpty(), Announcement::getTitle, title);
-        wrapper.orderByDesc(Announcement::getTop).orderByDesc(Announcement::getCreateTime);
+        wrapper.orderByAsc(Announcement::getId);
         Page<Announcement> page = announcementMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillPublisherName);
         return Result.success(page);
@@ -47,7 +47,7 @@ public class AnnouncementController {
                                 @RequestParam(defaultValue = "10") Integer pageSize) {
         LambdaQueryWrapper<Announcement> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Announcement::getStatus, 1);
-        wrapper.orderByDesc(Announcement::getTop).orderByDesc(Announcement::getCreateTime);
+        wrapper.orderByAsc(Announcement::getId);
         Page<Announcement> page = announcementMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         page.getRecords().forEach(this::fillPublisherName);
         return Result.success(page);

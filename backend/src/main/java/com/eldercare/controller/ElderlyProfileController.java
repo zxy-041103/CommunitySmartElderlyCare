@@ -47,7 +47,7 @@ public class ElderlyProfileController {
             if (users.isEmpty()) return Result.success(page);
             wrapper.in(ElderlyProfile::getUserId, users.stream().map(User::getId).collect(java.util.stream.Collectors.toList()));
         }
-        wrapper.orderByDesc(ElderlyProfile::getCreateTime);
+        wrapper.orderByAsc(ElderlyProfile::getId);
         elderlyProfileMapper.selectPage(page, wrapper);
         page.getRecords().forEach(this::fillUserInfo);
         return Result.success(page);
